@@ -77,6 +77,10 @@ model User {
   ticketComments    TicketComment[]
   ticketAttachments TicketAttachment[]
 
+  ideas        Idea[]
+  ideaVotes    IdeaVote[]
+  ideaComments IdeaComment[]
+
   @@map("users")
 }
 
@@ -234,4 +238,57 @@ model TicketAttachment {
   uploader User           @relation(fields: [uploadedById], references: [id])
 
   @@map("ticket_attachments")
+}
+
+enum IdeaStatus {
+  NOVA
+  EM_ANALISE
+  APROVADA
+  EM_IMPLEMENTACAO
+  IMPLEMENTADA
+  ARQUIVADA
+}
+
+model Idea {
+  id              Int        @id @default(autoincrement())
+  title           String
+  description     String
+  areaImpacted    String
+  expectedBenefit String
+  authorId        Int
+  isAnonymous     Boolean    @default(false)
+  status          IdeaStatus @default(NOVA)
+  createdAt       DateTime   @default(now())
+
+  author   User          @relation(fields: [authorId], references: [id])
+  votes    IdeaVote[]
+  comments IdeaComment[]
+
+  @@map("ideas")
+}
+
+model IdeaVote {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([ideaId, userId])
+  @@map("idea_votes")
+}
+
+model IdeaComment {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  authorId  Int
+  body      String
+  createdAt DateTime @default(now())
+
+  idea   Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map("idea_comments")
 }
