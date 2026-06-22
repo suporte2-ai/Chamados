@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  level           Int
+  isSystemDefault Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  users             User[]
+  permissions       RolePermission[]
+  fieldVisibilities RoleFieldVisibility[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id            Int     @id @default(autoincrement())
+  roleId        Int
+  permissionKey String
+  enabled       Boolean @default(false)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionKey])
+  @@map("role_permissions")
+}
+
+model RoleFieldVisibility {
+  id       Int     @id @default(autoincrement())
+  roleId   Int
+  fieldKey String
+  visible  Boolean @default(true)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, fieldKey])
+  @@map("role_field_visibilities")
+}
+
+model Sector {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users   User[]
+
+  @@map("sectors")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String
+  roleId       Int
+  sectorId     Int
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  role   Role   @relation(fields: [roleId], references: [id])
+  sector Sector @relation(fields: [sectorId], references: [id])
+
+  resetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
