@@ -73,6 +73,10 @@ model User {
   ticketsRequested Ticket[] @relation("TicketRequester")
   ticketsAssigned  Ticket[] @relation("TicketAssignee")
 
+  ticketTimeLogs    TicketTimeLog[]
+  ticketComments    TicketComment[]
+  ticketAttachments TicketAttachment[]
+
   @@map("users")
 }
 
@@ -162,9 +166,72 @@ model Ticket {
   assignee    User?       @relation("TicketAssignee", fields: [assignedToId], references: [id])
   sector      Sector      @relation(fields: [sectorId], references: [id])
 
+  timeLogs    TicketTimeLog[]
+  comments    TicketComment[]
+  attachments TicketAttachment[]
+
   @@index([status])
   @@index([urgency])
   @@index([assignedToId])
   @@index([createdAt])
   @@map("tickets")
+}
+
+enum TicketTimeLogEventType {
+  CREATED
+  STATUS_CHANGE
+  FIRST_RESPONSE
+  PAUSE_START
+  PAUSE_END
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+model TicketTimeLog {
+  id         Int                    @id @default(autoincrement())
+  ticketId   Int
+  eventType  TicketTimeLogEventType
+  fromStatus TicketStatus?
+  toStatus   TicketStatus?
+  authorId   Int
+  occurredAt DateTime               @default(now())
+  note       String?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, occurredAt])
+  @@map("ticket_time_logs")
+}
+
+model TicketComment {
+  id         Int      @id @default(autoincrement())
+  ticketId   Int
+  authorId   Int
+  body       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  ticket      Ticket             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author      User               @relation(fields: [authorId], references: [id])
+  attachments TicketAttachment[]
+
+  @@map("ticket_comments")
+}
+
+model TicketAttachment {
+  id           Int      @id @default(autoincrement())
+  ticketId     Int
+  commentId    Int?
+  fileName     String
+  filePath     String
+  uploadedById Int
+  createdAt    DateTime @default(now())
+
+  ticket   Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  comment  TicketComment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  uploader User           @relation(fields: [uploadedById], references: [id])
+
+  @@map("ticket_attachments")
 }
