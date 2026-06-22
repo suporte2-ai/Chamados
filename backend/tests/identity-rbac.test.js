@@ -14,7 +14,7 @@ test('creates a role with permissions and field visibility', async () => {
   const role = await prisma.role.create({
     data: {
       name: 'Técnico/Atendente',
-      level: 3,
+      level: 2,
       permissions: {
         create: [{ permissionKey: 'view_internal_notes', enabled: true }],
       },
@@ -49,7 +49,7 @@ test('creates a sector and a user linked to a role and sector', async () => {
 
 test('enforces unique email on users', async () => {
   const sector = await prisma.sector.create({ data: { name: 'RH' } });
-  const role = await prisma.role.create({ data: { name: 'Gestor', level: 2 } });
+  const role = await prisma.role.create({ data: { name: 'Gestor', level: 3 } });
 
   await prisma.user.create({
     data: {
