@@ -50,6 +50,7 @@ model Sector {
   name String @unique
 
   users   User[]
+  tickets Ticket[]
 
   @@map("sectors")
 }
@@ -68,7 +69,9 @@ model User {
   role   Role   @relation(fields: [roleId], references: [id])
   sector Sector @relation(fields: [sectorId], references: [id])
 
-  resetTokens PasswordResetToken[]
+  resetTokens      PasswordResetToken[]
+  ticketsRequested Ticket[] @relation("TicketRequester")
+  ticketsAssigned  Ticket[] @relation("TicketAssignee")
 
   @@map("users")
 }
@@ -84,4 +87,84 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
+}
+
+enum TicketUrgency {
+  CRITICO
+  ALTO
+  MEDIO
+  BAIXO
+}
+
+enum TicketStatus {
+  ABERTO
+  EM_ANDAMENTO
+  AGUARDANDO
+  RESOLVIDO
+  FECHADO
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  subcategories Subcategory[]
+  tickets       Ticket[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id         Int    @id @default(autoincrement())
+  categoryId Int
+  name       String
+
+  category Category @relation(fields: [categoryId], references: [id])
+  tickets  Ticket[]
+
+  @@unique([categoryId, name])
+  @@map("subcategories")
+}
+
+model SlaConfig {
+  id                 Int           @id @default(autoincrement())
+  urgency            TicketUrgency @unique
+  firstResponseHours Int
+  resolutionHours    Int
+
+  @@map("sla_configs")
+}
+
+model Ticket {
+  id                         Int           @id @default(autoincrement())
+  title                       String
+  description                 String
+  categoryId                   Int
+  subcategoryId                Int
+  urgency                      TicketUrgency
+  status                       TicketStatus  @default(ABERTO)
+  requesterId                  Int
+  assignedToId                 Int?
+  sectorId                     Int
+  estimatedCost                Decimal?      @db.Decimal(10, 2)
+  createdAt                    DateTime      @default(now())
+  firstResponseAt              DateTime?
+  resolvedAt                   DateTime?
+  closedAt                     DateTime?
+  timeToFirstResponseMinutes   Int?
+  timeToResolutionMinutes      Int?
+  slaFirstResponseDeadline     DateTime
+  slaResolutionDeadline        DateTime
+
+  category    Category    @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory @relation(fields: [subcategoryId], references: [id])
+  requester   User        @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignee    User?       @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  sector      Sector      @relation(fields: [sectorId], references: [id])
+
+  @@index([status])
+  @@index([urgency])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("tickets")
 }
