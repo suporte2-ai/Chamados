@@ -81,6 +81,8 @@ model User {
   ideaVotes    IdeaVote[]
   ideaComments IdeaComment[]
 
+  notifications Notification[]
+
   @@map("users")
 }
 
@@ -291,4 +293,19 @@ model IdeaComment {
   author User @relation(fields: [authorId], references: [id])
 
   @@map("idea_comments")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }
