@@ -240,6 +240,16 @@ async function createTicketWithTimeline({
       occurredAt: firstResponseAt,
     },
   });
+  await prisma.ticketTimeLog.create({
+    data: {
+      ticketId: ticket.id,
+      eventType: 'STATUS_CHANGE',
+      fromStatus: 'ABERTO',
+      toStatus: 'EM_ANDAMENTO',
+      authorId: assignee.id,
+      occurredAt: firstResponseAt,
+    },
+  });
   const timeToFirstResponseMinutes = Math.round((firstResponseAt - createdAt) / MINUTE_MS);
 
   if (finalStatus === 'AGUARDANDO') {
@@ -248,6 +258,16 @@ async function createTicketWithTimeline({
       data: {
         ticketId: ticket.id,
         eventType: 'PAUSE_START',
+        fromStatus: 'EM_ANDAMENTO',
+        toStatus: 'AGUARDANDO',
+        authorId: assignee.id,
+        occurredAt: pauseStart,
+      },
+    });
+    await prisma.ticketTimeLog.create({
+      data: {
+        ticketId: ticket.id,
+        eventType: 'STATUS_CHANGE',
         fromStatus: 'EM_ANDAMENTO',
         toStatus: 'AGUARDANDO',
         authorId: assignee.id,
@@ -289,7 +309,27 @@ async function createTicketWithTimeline({
     await prisma.ticketTimeLog.create({
       data: {
         ticketId: ticket.id,
+        eventType: 'STATUS_CHANGE',
+        fromStatus: 'EM_ANDAMENTO',
+        toStatus: 'AGUARDANDO',
+        authorId: assignee.id,
+        occurredAt: pauseStart,
+      },
+    });
+    await prisma.ticketTimeLog.create({
+      data: {
+        ticketId: ticket.id,
         eventType: 'PAUSE_END',
+        fromStatus: 'AGUARDANDO',
+        toStatus: 'EM_ANDAMENTO',
+        authorId: assignee.id,
+        occurredAt: pauseEnd,
+      },
+    });
+    await prisma.ticketTimeLog.create({
+      data: {
+        ticketId: ticket.id,
+        eventType: 'STATUS_CHANGE',
         fromStatus: 'AGUARDANDO',
         toStatus: 'EM_ANDAMENTO',
         authorId: assignee.id,
@@ -312,6 +352,16 @@ async function createTicketWithTimeline({
       occurredAt: resolvedAt,
     },
   });
+  await prisma.ticketTimeLog.create({
+    data: {
+      ticketId: ticket.id,
+      eventType: 'STATUS_CHANGE',
+      fromStatus: 'EM_ANDAMENTO',
+      toStatus: 'RESOLVIDO',
+      authorId: assignee.id,
+      occurredAt: resolvedAt,
+    },
+  });
   const timeToResolutionMinutes = Math.round((resolvedAt - createdAt) / MINUTE_MS) - pauseMinutes;
 
   if (finalStatus === 'RESOLVIDO') {
@@ -327,6 +377,16 @@ async function createTicketWithTimeline({
     data: {
       ticketId: ticket.id,
       eventType: 'CLOSED',
+      fromStatus: 'RESOLVIDO',
+      toStatus: 'FECHADO',
+      authorId: assignee.id,
+      occurredAt: closedAt,
+    },
+  });
+  await prisma.ticketTimeLog.create({
+    data: {
+      ticketId: ticket.id,
+      eventType: 'STATUS_CHANGE',
       fromStatus: 'RESOLVIDO',
       toStatus: 'FECHADO',
       authorId: assignee.id,

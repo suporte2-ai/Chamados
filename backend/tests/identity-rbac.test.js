@@ -13,7 +13,7 @@ afterAll(async () => {
 test('creates a role with permissions and field visibility', async () => {
   const role = await prisma.role.create({
     data: {
-      name: 'Técnico/Atendente',
+      name: 'Role Teste Identity Tecnico',
       level: 2,
       permissions: {
         create: [{ permissionKey: 'view_internal_notes', enabled: true }],
@@ -30,8 +30,8 @@ test('creates a role with permissions and field visibility', async () => {
 });
 
 test('creates a sector and a user linked to a role and sector', async () => {
-  const sector = await prisma.sector.create({ data: { name: 'TI' } });
-  const role = await prisma.role.create({ data: { name: 'Usuário Final', level: 1 } });
+  const sector = await prisma.sector.create({ data: { name: 'Sector Teste Identity TI' } });
+  const role = await prisma.role.create({ data: { name: 'Role Teste Identity UsuarioFinal', level: 1 } });
 
   const user = await prisma.user.create({
     data: {
@@ -48,8 +48,8 @@ test('creates a sector and a user linked to a role and sector', async () => {
 });
 
 test('enforces unique email on users', async () => {
-  const sector = await prisma.sector.create({ data: { name: 'RH' } });
-  const role = await prisma.role.create({ data: { name: 'Gestor', level: 3 } });
+  const sector = await prisma.sector.create({ data: { name: 'Sector Teste Identity RH' } });
+  const role = await prisma.role.create({ data: { name: 'Role Teste Identity Gestor', level: 3 } });
 
   await prisma.user.create({
     data: {
@@ -75,8 +75,8 @@ test('enforces unique email on users', async () => {
 });
 
 test('creates a password reset token for a user', async () => {
-  const sector = await prisma.sector.create({ data: { name: 'Financeiro' } });
-  const role = await prisma.role.create({ data: { name: 'Administrador', level: 4 } });
+  const sector = await prisma.sector.create({ data: { name: 'Sector Teste Identity Financeiro' } });
+  const role = await prisma.role.create({ data: { name: 'Role Teste Identity Admin', level: 4 } });
   const user = await prisma.user.create({
     data: {
       name: 'Ana Paula',
