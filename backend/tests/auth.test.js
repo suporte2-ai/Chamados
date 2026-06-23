@@ -59,6 +59,8 @@ test('login with correct credentials returns an access token and profile', async
   expect(response.status).toBe(200);
   expect(response.body.accessToken).toBeDefined();
   expect(response.body.user.email).toBe(activeUser.email);
+  expect(response.body.user.role.id).toBe(role.id);
+  expect(response.body.user.role.name).toBe(role.name);
   expect(response.headers['set-cookie'][0]).toMatch(/refreshToken=/);
 });
 
@@ -124,6 +126,8 @@ test('GET /api/auth/me returns the logged-in profile', async () => {
 
   expect(meResponse.status).toBe(200);
   expect(meResponse.body.user.email).toBe(activeUser.email);
+  expect(meResponse.body.user.role.id).toBe(role.id);
+  expect(meResponse.body.user.role.name).toBe(role.name);
 });
 
 test('forgot-password always responds 200, even for an unknown email', async () => {

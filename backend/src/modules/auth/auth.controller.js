@@ -23,8 +23,13 @@ async function buildProfilePayload(user) {
   });
 
   return {
-    user: { id: user.id, name: user.name, email: user.email, sectorId: user.sectorId },
-    role: { id: role.id, name: role.name },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: { id: role.id, name: role.name },
+      sectorId: user.sectorId,
+    },
     permissions: role.permissions.filter((permission) => permission.enabled).map((permission) => permission.permissionKey),
     fieldVisibilities: role.fieldVisibilities.map((field) => ({ fieldKey: field.fieldKey, visible: field.visible })),
   };
