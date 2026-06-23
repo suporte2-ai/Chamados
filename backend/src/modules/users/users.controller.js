@@ -1,12 +1,22 @@
 const bcrypt = require('bcrypt');
 const prisma = require('../../lib/prisma');
 
+const USER_SAFE_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  active: true,
+  roleId: true,
+  sectorId: true,
+  lastLoginAt: true,
+  createdAt: true,
+  role: { select: { id: true, name: true } },
+  sector: { select: { id: true, name: true } },
+};
+
 async function list(req, res) {
   const users = await prisma.user.findMany({
-    include: {
-      role: { select: { id: true, name: true } },
-      sector: { select: { id: true, name: true } },
-    },
+    select: USER_SAFE_SELECT,
     orderBy: { id: 'asc' },
   });
   res.json(users);
@@ -32,7 +42,10 @@ async function create(req, res) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { name, email, passwordHash, roleId, sectorId } });
+  const user = await prisma.user.create({
+    data: { name, email, passwordHash, roleId, sectorId },
+    select: USER_SAFE_SELECT,
+  });
   res.status(201).json(user);
 }
 
@@ -52,7 +65,11 @@ async function update(req, res) {
   if (sectorId !== undefined) data.sectorId = sectorId;
   if (active !== undefined) data.active = active;
 
-  const updated = await prisma.user.update({ where: { id }, data });
+  const updated = await prisma.user.update({
+    where: { id },
+    data,
+    select: USER_SAFE_SELECT,
+  });
   res.json(updated);
 }
 

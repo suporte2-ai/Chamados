@@ -63,7 +63,7 @@ test('POST /api/users creates a user with an admin-supplied password', async () 
 
   expect(response.status).toBe(201);
   expect(response.body.email).toBe('novo.usuario.api@example.com');
-  expect(response.body.passwordHash).not.toBe('SenhaInicial123!');
+  expect(response.body.passwordHash).toBeUndefined();
   createdUserIds.push(response.body.id);
 });
 
@@ -101,6 +101,7 @@ test('PATCH /api/users/:id soft-deletes a user by setting active to false', asyn
 
   expect(response.status).toBe(200);
   expect(response.body.active).toBe(false);
+  expect(response.body.passwordHash).toBeUndefined();
 });
 
 test('GET /api/users lists users when authenticated with manage_users', async () => {
@@ -108,4 +109,8 @@ test('GET /api/users lists users when authenticated with manage_users', async ()
 
   expect(response.status).toBe(200);
   expect(Array.isArray(response.body)).toBe(true);
+  expect(response.body.length).toBeGreaterThan(0);
+  response.body.forEach((user) => {
+    expect(user.passwordHash).toBeUndefined();
+  });
 });
