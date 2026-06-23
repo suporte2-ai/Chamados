@@ -51,6 +51,7 @@ test('creates a sector and a user linked to a role and sector', async () => {
 
   expect(user.active).toBe(true);
   expect(user.sectorId).toBe(sector.id);
+  expect(user.refreshTokenVersion).toBe(0);
 });
 
 test('enforces unique email on users', async () => {
