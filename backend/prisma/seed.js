@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
+const { PERMISSION_KEYS, FIELD_KEYS } = require('../src/lib/permissions');
 
 const prisma = new PrismaClient();
 
@@ -72,19 +73,7 @@ async function seedRolesAndPermissions() {
   const tecnico = await prisma.role.create({ data: { name: 'Técnico/Atendente', level: 2, isSystemDefault: true } });
   const usuarioFinal = await prisma.role.create({ data: { name: 'Usuário Final', level: 1, isSystemDefault: true } });
 
-  const allPermissionKeys = [
-    'manage_users',
-    'manage_roles',
-    'manage_categories',
-    'manage_sla',
-    'view_performance_panel',
-    'view_financial_reports',
-    'reassign_tickets',
-    'close_tickets',
-    'view_internal_notes',
-    'view_own_metrics',
-    'reopen_tickets',
-  ];
+  const allPermissionKeys = PERMISSION_KEYS;
 
   const rolePermissionMatrix = {
     [admin.id]: allPermissionKeys,
@@ -108,7 +97,7 @@ async function seedRolesAndPermissions() {
     }
   }
 
-  const allFieldKeys = ['assigned_to', 'estimated_cost', 'internal_notes', 'sla_badge'];
+  const allFieldKeys = FIELD_KEYS;
 
   const fieldVisibilityMatrix = {
     [admin.id]: allFieldKeys,
