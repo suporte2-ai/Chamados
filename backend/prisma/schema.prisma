@@ -56,23 +56,23 @@ model Sector {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  name         String
-  email        String    @unique
-  passwordHash String
-  roleId       Int
-  sectorId     Int
-  active       Boolean   @default(true)
+  id                  Int       @id @default(autoincrement())
+  name                String
+  email               String    @unique
+  passwordHash        String
+  roleId              Int
+  sectorId            Int
+  active              Boolean   @default(true)
   refreshTokenVersion Int       @default(0)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
 
   role   Role   @relation(fields: [roleId], references: [id])
   sector Sector @relation(fields: [sectorId], references: [id])
 
   resetTokens      PasswordResetToken[]
-  ticketsRequested Ticket[] @relation("TicketRequester")
-  ticketsAssigned  Ticket[] @relation("TicketAssignee")
+  ticketsRequested Ticket[]             @relation("TicketRequester")
+  ticketsAssigned  Ticket[]             @relation("TicketAssignee")
 
   ticketTimeLogs    TicketTimeLog[]
   ticketComments    TicketComment[]
@@ -148,24 +148,24 @@ model SlaConfig {
 
 model Ticket {
   id                         Int           @id @default(autoincrement())
-  title                       String
-  description                 String
-  categoryId                   Int
-  subcategoryId                Int
-  urgency                      TicketUrgency
-  status                       TicketStatus  @default(ABERTO)
-  requesterId                  Int
-  assignedToId                 Int?
-  sectorId                     Int
-  estimatedCost                Decimal?      @db.Decimal(10, 2)
-  createdAt                    DateTime      @default(now())
-  firstResponseAt              DateTime?
-  resolvedAt                   DateTime?
-  closedAt                     DateTime?
-  timeToFirstResponseMinutes   Int?
-  timeToResolutionMinutes      Int?
-  slaFirstResponseDeadline     DateTime
-  slaResolutionDeadline        DateTime
+  title                      String
+  description                String
+  categoryId                 Int
+  subcategoryId              Int
+  urgency                    TicketUrgency
+  status                     TicketStatus  @default(ABERTO)
+  requesterId                Int
+  assignedToId               Int?
+  sectorId                   Int
+  estimatedCost              Decimal?      @db.Decimal(10, 2)
+  createdAt                  DateTime      @default(now())
+  firstResponseAt            DateTime?
+  resolvedAt                 DateTime?
+  closedAt                   DateTime?
+  timeToFirstResponseMinutes Int?
+  timeToResolutionMinutes    Int?
+  slaFirstResponseDeadline   DateTime
+  slaResolutionDeadline      DateTime
 
   category    Category    @relation(fields: [categoryId], references: [id])
   subcategory Subcategory @relation(fields: [subcategoryId], references: [id])
