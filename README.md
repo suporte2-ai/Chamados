@@ -5,10 +5,12 @@ em `docs/superpowers/specs/2026-06-22-helpdesk-design.md`.
 
 ## Status atual
 
-Esta é a Fase 1 do projeto: schema do banco de dados, migrations e dados de
-exemplo (seed). As fases seguintes (autenticação, módulo de chamados, painel
-de desempenho, ideias, dashboard e admin) ainda serão adicionadas — esta
-seção do README será expandida a cada fase.
+Fases 1 e 2 concluídas: schema do banco de dados, migrations, dados de
+exemplo (seed), autenticação JWT (login, refresh com rotação, logout,
+recuperação de senha) e gestão de usuários/roles/permissões (RBAC). As
+fases seguintes (módulo de chamados, painel de desempenho, ideias,
+dashboard e admin) ainda serão adicionadas — esta seção do README será
+expandida a cada fase.
 
 ## Stack
 
@@ -62,8 +64,8 @@ seção do README será expandida a cada fase.
    - **E-mail:** `admin@helpdesk.com`
    - **Senha:** `Senha123!`
 
-   (A autenticação real ainda será implementada na próxima fase; por
-   enquanto este usuário existe apenas no banco de dados.)
+   Use este usuário para fazer login via `POST /api/auth/login` — veja a
+   seção [Autenticação (Fase 2)](#autenticação-fase-2) abaixo.
 
 ## Variáveis de ambiente (backend/.env)
 
@@ -71,6 +73,11 @@ seção do README será expandida a cada fase.
 |----------------|---------------------------------------------|-----------------------------------------------------------------------|
 | `DATABASE_URL` | String de conexão do PostgreSQL             | `postgresql://helpdesk:helpdesk@localhost:5432/helpdesk?schema=public` |
 | `PORT`         | Porta em que o backend Express escuta       | `4000`                                                                 |
+| `JWT_ACCESS_SECRET`         | Segredo de assinatura do access token       | string aleatória forte                                                 |
+| `JWT_REFRESH_SECRET`        | Segredo de assinatura do refresh token      | string aleatória forte (diferente do access)                          |
+| `JWT_ACCESS_EXPIRES`        | Validade do access token                    | `15m`                                                                  |
+| `JWT_REFRESH_EXPIRES`       | Validade do refresh token                   | `7d`                                                                   |
+| `RESET_TOKEN_EXPIRES_HOURS` | Validade do link de redefinição de senha    | `1`                                                                    |
 
 ## Testes
 
@@ -84,6 +91,25 @@ mesmas tabelas e cada um limpa os dados que usa. Não rode `npx jest` depois
 de `npm run db:seed` esperando que os dados de exemplo permaneçam — execute
 um ou outro dependendo do que você precisa no momento (verificar o schema
 vs. ter uma base de demonstração populada).
+
+## Autenticação (Fase 2)
+
+- `POST /api/auth/login` — `{ email, password }`, retorna `accessToken` no
+  corpo e seta o refresh token em cookie httpOnly (`path=/api/auth`).
+- `POST /api/auth/refresh` — lê o cookie de refresh, rotaciona e retorna um
+  novo `accessToken`.
+- `POST /api/auth/logout` — requer `Authorization: Bearer <accessToken>`;
+  invalida o refresh token atual.
+- `GET /api/auth/me` — retorna o perfil do usuário logado.
+- `POST /api/auth/forgot-password` / `POST /api/auth/reset-password` — sem
+  SMTP configurado, o link de redefinição é apenas logado no console do
+  backend (modo dev).
+- Rotas administrativas (`/api/users`, `/api/roles`,
+  `/api/permissions/catalog`) exigem `Authorization: Bearer <accessToken>`
+  de um usuário com a permissão `manage_users` (exceto o catálogo, que só
+  exige estar autenticado).
+- Use o usuário semeado `admin@helpdesk.com` / `Senha123!` para obter um
+  token via `POST /api/auth/login` e testar as rotas administrativas.
 
 ## Verificar dados de exemplo
 

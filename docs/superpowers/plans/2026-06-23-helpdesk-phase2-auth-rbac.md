@@ -1659,7 +1659,7 @@ git commit -m "feat: add roles API and permissions catalog endpoint"
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Atualizar a seção "Status atual"**
+- [x] **Step 1: Atualizar a seção "Status atual"**
 
 Em `README.md`, substitua o parágrafo da seção `## Status atual` por:
 
@@ -1674,7 +1674,7 @@ dashboard e admin) ainda serão adicionadas — esta seção do README será
 expandida a cada fase.
 ```
 
-- [ ] **Step 2: Adicionar variáveis de ambiente novas à tabela**
+- [x] **Step 2: Adicionar variáveis de ambiente novas à tabela**
 
 Na seção `## Variáveis de ambiente (backend/.env)`, adicione as linhas abaixo à tabela existente:
 
@@ -1686,7 +1686,7 @@ Na seção `## Variáveis de ambiente (backend/.env)`, adicione as linhas abaixo
 | `RESET_TOKEN_EXPIRES_HOURS` | Validade do link de redefinição de senha    | `1`                                                                    |
 ```
 
-- [ ] **Step 3: Adicionar uma seção sobre autenticação**
+- [x] **Step 3: Adicionar uma seção sobre autenticação**
 
 Adicione ao final do `README.md`, antes da seção `## Verificar dados de exemplo`:
 
@@ -1711,7 +1711,7 @@ Adicione ao final do `README.md`, antes da seção `## Verificar dados de exempl
   token via `POST /api/auth/login` e testar as rotas administrativas.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md
