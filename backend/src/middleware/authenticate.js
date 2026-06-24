@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const { verifyAccessToken } = require('../lib/jwt');
+const { getEnabledPermissionKeys, getVisibleFieldKeys } = require('../lib/permissions');
 
 async function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
@@ -29,12 +30,8 @@ async function authenticate(req, res, next) {
     id: user.id,
     roleId: user.roleId,
     sectorId: user.sectorId,
-    permissions: new Set(
-      user.role.permissions.filter((permission) => permission.enabled).map((permission) => permission.permissionKey)
-    ),
-    fieldVisibilities: new Set(
-      user.role.fieldVisibilities.filter((field) => field.visible).map((field) => field.fieldKey)
-    ),
+    permissions: new Set(getEnabledPermissionKeys(user.role)),
+    fieldVisibilities: new Set(getVisibleFieldKeys(user.role)),
   };
 
   next();

@@ -5,6 +5,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
 const permissionsRoutes = require('./modules/permissions/permissions.routes');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 app.use(express.json());
@@ -19,18 +20,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
 
-// Middleware de erro centralizado: captura qualquer erro encaminhado via next(error)
-// (incluindo promises rejeitadas de handlers async, via asyncHandler) e garante que
-// toda requisição sempre recebe uma resposta, em vez de ficar pendente até timeout.
-// eslint-disable-next-line no-unused-vars
-app.use((error, req, res, next) => {
-  if (error && error.code === 'ROLE_NOT_FOUND') {
-    return res.status(409).json({ error: 'A função (role) do usuário não foi encontrada.' });
-  }
-
-  console.error(error);
-  res.status(500).json({ error: 'Erro interno do servidor.' });
-});
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 

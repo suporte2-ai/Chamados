@@ -14,4 +14,12 @@ const PERMISSION_KEYS = [
 
 const FIELD_KEYS = ['assigned_to', 'estimated_cost', 'internal_notes', 'sla_badge'];
 
-module.exports = { PERMISSION_KEYS, FIELD_KEYS };
+function getEnabledPermissionKeys(role) {
+  return role.permissions.filter((permission) => permission.enabled).map((permission) => permission.permissionKey);
+}
+
+function getVisibleFieldKeys(role) {
+  return role.fieldVisibilities.filter((field) => field.visible).map((field) => field.fieldKey);
+}
+
+module.exports = { PERMISSION_KEYS, FIELD_KEYS, getEnabledPermissionKeys, getVisibleFieldKeys };

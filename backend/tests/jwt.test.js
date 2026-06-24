@@ -4,6 +4,7 @@ const {
   verifyAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  getRefreshTokenExpiresInMs,
 } = require('../src/lib/jwt');
 
 test('signs and verifies an access token', () => {
@@ -27,4 +28,8 @@ test('rejects a tampered access token', () => {
 test('rejects an access token verified as a refresh token', () => {
   const token = signAccessToken(42);
   expect(() => verifyRefreshToken(token)).toThrow();
+});
+
+test('getRefreshTokenExpiresInMs matches the default 7d refresh expiry', () => {
+  expect(getRefreshTokenExpiresInMs()).toBe(7 * 24 * 60 * 60 * 1000);
 });

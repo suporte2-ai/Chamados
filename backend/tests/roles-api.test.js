@@ -44,6 +44,38 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
+test('an unexpected error in GET /api/roles is caught by the global error handler instead of hanging the request', async () => {
+  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const findManySpy = jest
+    .spyOn(prisma.role, 'findMany')
+    .mockRejectedValueOnce(new Error('Falha simulada de conexão com o banco.'));
+
+  const response = await request(app).get('/api/roles').set('Authorization', `Bearer ${adminToken}`);
+
+  expect(response.status).toBe(500);
+  expect(response.body.error).toBeDefined();
+
+  findManySpy.mockRestore();
+  consoleErrorSpy.mockRestore();
+});
+
+test('an unexpected error in the authenticate middleware on /api/permissions/catalog is caught by the global error handler', async () => {
+  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const findUniqueSpy = jest
+    .spyOn(prisma.user, 'findUnique')
+    .mockRejectedValueOnce(new Error('Falha simulada de conexão com o banco.'));
+
+  const response = await request(app)
+    .get('/api/permissions/catalog')
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  expect(response.status).toBe(500);
+  expect(response.body.error).toBeDefined();
+
+  findUniqueSpy.mockRestore();
+  consoleErrorSpy.mockRestore();
+});
+
 test('GET /api/permissions/catalog returns the fixed key lists for any authenticated user', async () => {
   const response = await request(app)
     .get('/api/permissions/catalog')

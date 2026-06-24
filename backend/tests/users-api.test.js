@@ -44,6 +44,21 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
+test('an unexpected error in GET /api/users is caught by the global error handler instead of hanging the request', async () => {
+  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const findManySpy = jest
+    .spyOn(prisma.user, 'findMany')
+    .mockRejectedValueOnce(new Error('Falha simulada de conexão com o banco.'));
+
+  const response = await request(app).get('/api/users').set('Authorization', `Bearer ${adminToken}`);
+
+  expect(response.status).toBe(500);
+  expect(response.body.error).toBeDefined();
+
+  findManySpy.mockRestore();
+  consoleErrorSpy.mockRestore();
+});
+
 test('GET /api/users requires authentication', async () => {
   const response = await request(app).get('/api/users');
   expect(response.status).toBe(401);
