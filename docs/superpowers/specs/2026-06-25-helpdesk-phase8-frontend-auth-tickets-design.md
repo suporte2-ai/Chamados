@@ -49,9 +49,9 @@ frontend/
     lib/
       axios.js            — instância axios com interceptor de refresh token
       queryClient.js      — instância QueryClient (staleTime, retry config)
-      utils.js            — formatDate, formatTicketId (#00142), slaBadgeColor
+      utils.js            — formatDate, formatTicketId (#00142), SLA_BADGE_COLORS (mapa vermelho/amarelo/verde → classes CSS)
     stores/
-      authStore.js        — Zustand: { user, permissions, fieldVisibility, setAuth, logout }
+      authStore.js        — Zustand: { user, permissions, fieldVisibilities, setAuth, logout }
     api/
       auth.js             — login, logout, forgotPassword, resetPassword, refreshToken
       tickets.js          — list, get, create, update, addComment, addAttachment, reopen
@@ -82,8 +82,8 @@ frontend/
 
 ```
 /login                        — pública
-/forgot-password              — pública
-/reset-password/:token        — pública
+/forgot-password              — pública (resposta sempre 200 independente do e-mail existir — anti-enumeração do backend)
+/reset-password/:token        — pública (token lido via `useParams()` e enviado no body: `{ token, password }`)
 
 /tickets                      — protegida (qualquer autenticado)
 /tickets/new                  — protegida
@@ -101,22 +101,22 @@ Todas as rotas protegidas são filhas de `AppShell` via `<Outlet>` (layout aninh
 ```js
 // stores/authStore.js
 {
-  user: null,           // { id, name, email, role }
-  permissions: Set(),   // Set<string> de permissionKey habilitadas
-  fieldVisibility: Set(), // Set<string> de fieldKey visíveis
-  setAuth(payload),     // chamado após login/refresh
-  logout(),             // limpa store + chama POST /api/auth/logout
+  user: null,             // { id, name, email, role }
+  permissions: Set(),     // Set<string> de permissionKey habilitadas
+  fieldVisibilities: Set(), // Set<string> de fieldKey visíveis — chave plural (igual ao backend)
+  setAuth(payload),       // chamado após login/me; recebe { user, permissions[], fieldVisibilities[] }
+  logout(),               // limpa store + chama POST /api/auth/logout (204); cookie httpOnly é limpo pelo backend
 }
 ```
 
-O payload de login retorna `{ user, permissions: string[], fieldVisibility: string[] }`. O store converte arrays para `Set` para lookup O(1).
+O payload de login retorna `{ user, permissions: string[], fieldVisibilities: string[] }` (chave plural — igual ao que o backend retorna em `profilePayloadFromUserWithRole`). O store converte arrays para `Set` para lookup O(1).
 
 ### Axios interceptor (`lib/axios.js`)
 
 - **Request:** adiciona `Authorization: Bearer <accessToken>` (token guardado em memória, não em localStorage)
 - **Response error 401:** tenta `POST /api/auth/refresh` uma vez; se sucesso, refaz a request original; se falhar, chama `authStore.logout()` e redireciona para `/login`
 - Access token guardado em módulo-scope (variável do módulo `axios.js`), nunca em `localStorage`/`sessionStorage`
-- **Restauração de sessão:** ao inicializar o app, se `user === null` no store, chama `GET /api/auth/me` (que usa o refresh token cookie); se retornar 200, popula o store e mostra a rota; se retornar 401, mostra `/login`
+- **Restauração de sessão (2 passos):** ao inicializar o app, se `user === null` no store: (1) `POST /api/auth/refresh` — se retornar 200, extrai `accessToken` e armazena em módulo-scope; (2) `GET /api/auth/me` com `Authorization: Bearer <accessToken>` — popula o store com `{ user, permissions, fieldVisibilities }`. Se qualquer passo retornar 401/erro, mostra `/login`. `GET /api/auth/me` exige Bearer token e NÃO usa o cookie diretamente — sem o passo 1, o store não é populado.
 
 ### `useAuth` hook
 
@@ -145,7 +145,7 @@ useQuery({
 - Ícone sino no header
 - Badge vermelho com contagem de `isRead === false`; some quando zerado
 - `document.title`: `(N) Helpdesk` quando N > 0, `Helpdesk` quando zero
-- Clique: abre `Popover` (shadcn) listando as 10 notificações mais recentes
+- Clique: abre `Popover` (shadcn) listando as 10 notificações mais recentes (`.slice(0, 10)` no frontend — a API retorna todas não lidas + recentes)
 - Cada notificação: ícone de tipo + mensagem + tempo relativo ("há 5 min")
 - Clique na notificação: `PATCH /api/notifications/:id/read` → navega para `notification.link`
 - Botão "Marcar todas como lidas": `PATCH /api/notifications/read-all` → invalida query
@@ -181,7 +181,7 @@ Links condicionais por permissão (apenas referência; renderizados na Fase 9):
 | `status` | Multi-select (shadcn) | ABERTO, EM_ANDAMENTO, AGUARDANDO, RESOLVIDO, FECHADO |
 | `urgency` | Select | CRITICO, ALTO, MEDIO, BAIXO |
 | `sectorId` | Select | setores carregados de `GET /api/sectors` |
-| `from` / `to` | Date inputs | período de criação |
+| `from` / `to` | Date inputs | período de criação (**pré-requisito backend:** filtros `from`/`to` não existem ainda na rota `GET /api/tickets` — extensão necessária na Fase 8) |
 | `search` | Input texto | busca no título |
 
 Filtros persistidos em query params da URL (compartilháveis/navegáveis com back/forward).
@@ -198,7 +198,7 @@ Filtros persistidos em query params da URL (compartilháveis/navegáveis com bac
 | SLA | | `fieldVisible('sla_badge')` |
 | Criado em | ✓ | |
 
-Paginação: `?page=1&limit=20`, controles de página no rodapé da tabela.  
+Paginação: `?page=1&pageSize=20`, controles de página no rodapé da tabela.  
 Linha clicável → `navigate('/tickets/:id')`.  
 Botão "Novo chamado" no topo direito.
 
@@ -221,20 +221,16 @@ Submit: `POST /api/tickets` → redireciona para `/tickets/:id` com toast "Chama
 
 **Header do chamado:**
 - `#00142` (zero-padded com `String(id).padStart(5, '0')`) + título
-- Badges: Status (colorido por estado), Urgência (colorido por criticidade), SLA (verde/amarelo/vermelho calculado no frontend com a mesma lógica do backend)
+- Badges: Status (colorido por estado), Urgência (colorido por criticidade), SLA (badge colorida conforme `ticket.slaBadge`)
 
-**SLA badge (calculado no frontend):**
+**SLA badge (valor do backend):**
+O backend já retorna `ticket.slaBadge` com os valores `'vermelho'`, `'amarelo'` ou `'verde'` (ou `null` se sem SLA). O frontend mapeia esse valor para a cor CSS correspondente — não recalcula no cliente.
 ```js
-function slaBadgeColor(ticket) {
-  if (!ticket.slaResolutionDeadline) return null;
-  const ref = ticket.resolvedAt ? new Date(ticket.resolvedAt) : new Date();
-  const deadline = new Date(ticket.slaResolutionDeadline);
-  const created = new Date(ticket.createdAt);
-  const pct = (ref - created) / (deadline - created);
-  if (ref > deadline) return 'red';
-  if (pct >= 0.8) return 'yellow';
-  return 'green';
-}
+const SLA_BADGE_COLORS = {
+  vermelho: 'bg-red-100 text-red-700',
+  amarelo:  'bg-yellow-100 text-yellow-700',
+  verde:    'bg-green-100 text-green-700',
+};
 ```
 
 **Painel de campos (lado direito no desktop, abaixo do header no mobile):**
@@ -248,27 +244,29 @@ function slaBadgeColor(ticket) {
 - Custo estimado — input numérico editável se `permissions.has('update_cost')`; visível apenas se `fieldVisible('estimated_cost')`
 
 **Ações:**
-- Mudar status: dropdown com estados válidos a partir do estado atual
-- Fechar: visível se `permissions.has('close_tickets')` e status ≠ FECHADO
-- Reabrir: visível se `permissions.has('reopen_tickets')` e status === RESOLVIDO; chama `POST /api/tickets/:id/reopen`
+- Mudar status: dropdown com estados válidos a partir do estado atual → chama `PATCH /api/tickets/:id` com `{ status }` (transições normais — ex: ABERTO → EM_ANDAMENTO)
+- Fechar: visível se `permissions.has('close_tickets')` e status ≠ FECHADO → incluso no dropdown de status (transição RESOLVIDO → FECHADO via `PATCH`)
+- Reabrir: botão dedicado, visível se `permissions.has('reopen_tickets')` e status === RESOLVIDO → chama `POST /api/tickets/:id/reopen` (endpoint próprio, não via PATCH status)
 
 **Comentários:**
 - Lista de comentários em ordem cronológica
 - Notas internas (`isInternal: true`) marcadas visualmente com fundo amarelo + ícone de cadeado; visíveis apenas se `permissions.has('view_internal_notes')`
 - Formulário de novo comentário:
-  - `Textarea` para o corpo
+  - `Textarea` para o corpo — campo `body` no payload (`{ body: string, isInternal: boolean }`)
   - Toggle "Nota interna" — visível apenas se `permissions.has('view_internal_notes')`
   - Upload de arquivo (opcional) — `input type=file`, envia em `POST /api/tickets/:id/attachments` separado
-  - Submit: `POST /api/tickets/:id/comments`
+  - Submit: `POST /api/tickets/:id/comments` com `{ body, isInternal }`
 
 **Timeline:**
 - Lista de eventos do `TicketTimeLog` em ordem cronológica
 - Cada evento: ícone contextual + descrição legível (ex: "Status alterado para EM_ANDAMENTO por Carla Mendes") + data/hora relativa
 - Colapsável (expandir/recolher) para não poluir a tela
+- **Pré-requisito backend (Fase 8):** `GET /api/tickets/:id` precisa incluir `timeLogs` no response (atualmente não inclui). A extensão do endpoint é o primeiro passo antes de implementar a timeline.
 
 **Anexos:**
 - Lista de arquivos com nome, data de upload e link de download
 - Download via `GET /api/tickets/:ticketId/attachments/:attachmentId` (rota autenticada)
+- **Pré-requisito backend (Fase 8):** `GET /api/tickets/:id` precisa incluir `attachments` no response (atualmente não inclui). A extensão do endpoint é o primeiro passo antes de implementar a lista de anexos.
 
 ## 10. Tratamento de erros e UX
 
@@ -293,6 +291,11 @@ Axios usa `VITE_API_BASE_URL` como `baseURL`. Em produção, apontar para o dom�
 
 ## 13. Ordem de implementação
 
+**Extensões de backend (pré-requisito antes do frontend):**
+- 0a. Extender `GET /api/tickets/:id` para incluir `timeLogs` e `attachments` no response
+- 0b. Extender `GET /api/tickets` para suportar filtros `from` e `to` (query params, período de criação)
+
+**Frontend:**
 1. Scaffold: Vite + React + Tailwind + shadcn/ui inicializado
 2. `lib/axios.js` + `lib/queryClient.js` + `stores/authStore.js`
 3. Páginas de auth (Login, ForgotPassword, ResetPassword) + ProtectedRoute
