@@ -261,6 +261,7 @@ model Idea {
   authorId        Int
   isAnonymous     Boolean    @default(false)
   status          IdeaStatus @default(NOVA)
+  managerNote     String?
   createdAt       DateTime   @default(now())
 
   author   User          @relation(fields: [authorId], references: [id])
