@@ -7,6 +7,7 @@ const rolesRoutes = require('./modules/roles/roles.routes');
 const permissionsRoutes = require('./modules/permissions/permissions.routes');
 const categoriesRoutes = require('./modules/categories/categories.routes');
 const slaRoutes = require('./modules/sla/sla.routes');
+const sectorsRoutes = require('./modules/sectors/sectors.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -23,6 +24,7 @@ app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api', categoriesRoutes);
 app.use('/api', slaRoutes);
+app.use('/api', sectorsRoutes);
 
 app.use(errorHandler);
 
