@@ -612,6 +612,9 @@ async function seedNotifications(users, tickets, ideas) {
     });
   }
 
+  // Ensure exactly 15 read and 15 unread notifications based on global index
+  rows.forEach((row, idx) => { row.isRead = idx % 2 === 0; });
+
   for (const row of rows) {
     await prisma.notification.create({ data: row });
   }
