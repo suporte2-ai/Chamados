@@ -29,3 +29,8 @@ test('getVisibleFieldKeys returns only visible field keys', () => {
   };
   expect(getVisibleFieldKeys(role)).toEqual(['sla_badge']);
 });
+
+test('exposes the new ticket-visibility permission keys', () => {
+  expect(PERMISSION_KEYS).toContain('view_all_tickets');
+  expect(PERMISSION_KEYS).toContain('view_sector_tickets');
+});

@@ -10,6 +10,8 @@ const PERMISSION_KEYS = [
   'view_internal_notes',
   'view_own_metrics',
   'reopen_tickets',
+  'view_all_tickets',
+  'view_sector_tickets',
 ];
 
 const FIELD_KEYS = ['assigned_to', 'estimated_cost', 'internal_notes', 'sla_badge'];
