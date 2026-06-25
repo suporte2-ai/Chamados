@@ -237,3 +237,10 @@ test('GET /export sem permissão retorna 403', async () => {
     .set('Authorization', `Bearer ${noPermToken}`);
   expect(res.status).toBe(403);
 });
+
+test('GET /export com format inválido retorna 400', async () => {
+  const res = await request(app)
+    .get(`/api/performance/export?from=${PERIOD_FROM}&to=${PERIOD_TO}&format=xlsx`)
+    .set('Authorization', `Bearer ${techToken}`);
+  expect(res.status).toBe(400);
+});
