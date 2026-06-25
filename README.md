@@ -5,12 +5,13 @@ em `docs/superpowers/specs/2026-06-22-helpdesk-design.md`.
 
 ## Status atual
 
-Fases 1 e 2 concluídas: schema do banco de dados, migrations, dados de
-exemplo (seed), autenticação JWT (login, refresh com rotação, logout,
-recuperação de senha) e gestão de usuários/roles/permissões (RBAC). As
-fases seguintes (módulo de chamados, painel de desempenho, ideias,
-dashboard e admin) ainda serão adicionadas — esta seção do README será
-expandida a cada fase.
+Fases 1, 2 e 3 concluídas: schema do banco de dados, migrations, dados de
+exemplo (seed), autenticação JWT, gestão de usuários/roles/permissões
+(RBAC) e o módulo de chamados completo (categorias/SLA/setores,
+criação/listagem/detalhe, máquina de status com rastreamento de tempo e
+SLA, comentários públicos/internos e anexos). As fases seguintes (painel
+de desempenho, ideias, dashboard e admin) ainda serão adicionadas — esta
+seção do README será expandida a cada fase.
 
 ## Stack
 
@@ -110,6 +111,32 @@ vs. ter uma base de demonstração populada).
   exige estar autenticado).
 - Use o usuário semeado `admin@helpdesk.com` / `Senha123!` para obter um
   token via `POST /api/auth/login` e testar as rotas administrativas.
+
+## Chamados (Fase 3)
+
+- `POST /api/tickets` — `{ title, description, categoryId, subcategoryId, urgency }`.
+  `sectorId` é herdado do usuário logado; os prazos de SLA são calculados a
+  partir de `GET/PATCH /api/sla-config`.
+- `GET /api/tickets` — filtros via query string (`status`, `urgency`,
+  `categoryId`, `subcategoryId`, `assignedToId`, `sectorId`, `search`,
+  `sortBy`, `sortOrder`, `page`, `pageSize`). A visibilidade depende da
+  permissão do usuário: `view_all_tickets` (tudo), `view_sector_tickets`
+  (setor próprio + atribuídos a ele) ou nenhuma das duas (só os próprios
+  chamados abertos).
+- `GET /api/tickets/:id` — detalhe, incluindo comentários (notas internas
+  só com `view_internal_notes`).
+- `PATCH /api/tickets/:id` — `status` (validado pela máquina de transições),
+  `assignedToId` (requer `reassign_tickets`), `estimatedCost` (requer
+  `view_financial_reports`).
+- `POST /api/tickets/:id/reopen` — reabre um chamado `RESOLVIDO`, requer
+  `reopen_tickets`.
+- `POST /api/tickets/:id/comments` — `{ body, isInternal }`; `isInternal`
+  requer `view_internal_notes`.
+- `POST /api/tickets/:id/attachments` — multipart/form-data, campo `file`
+  (limite 10MB). `GET /api/tickets/:ticketId/attachments/:attachmentId`
+  faz o download, respeitando a mesma regra de visibilidade da listagem.
+- `GET/POST /api/categories`, `/api/sectors`; `GET/PATCH /api/sla-config/:urgency`
+  — administração de apoio, exigem `manage_categories`/`manage_sla`.
 
 ## Verificar dados de exemplo
 
