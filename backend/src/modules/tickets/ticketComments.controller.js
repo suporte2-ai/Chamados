@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma');
 const { ticketVisibilityWhere } = require('../../lib/ticketVisibility');
+const { notifyTicketComment } = require('../../lib/notificationService');
 
 async function create(req, res) {
   const ticketId = Number(req.params.id);
@@ -44,6 +45,7 @@ async function create(req, res) {
   }
 
   const [comment] = await prisma.$transaction(operations);
+  notifyTicketComment(ticket, req.user.id, Boolean(isInternal));
   res.status(201).json(comment);
 }
 

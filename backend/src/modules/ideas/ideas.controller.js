@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const { notifyIdeaStatusChanged, notifyIdeaVote } = require('../../lib/notificationService');
 
 const IDEA_STATUSES = ['NOVA', 'EM_ANALISE', 'APROVADA', 'EM_IMPLEMENTACAO', 'IMPLEMENTADA', 'ARQUIVADA'];
 
@@ -128,6 +129,7 @@ async function updateStatus(req, res) {
     include: ideaInclude(req.user.id),
   });
 
+  notifyIdeaStatusChanged(idea.authorId, updated);
   res.json(serialize(updated, req.user.id, true));
 }
 
@@ -164,6 +166,9 @@ async function toggleVote(req, res) {
     include: { _count: { select: { votes: true } } },
   });
   const voteCount = updated._count.votes;
+  if (!existing) {
+    notifyIdeaVote(idea.authorId, req.user.id, idea);
+  }
   res.json({ voted: !existing, voteCount });
 }
 

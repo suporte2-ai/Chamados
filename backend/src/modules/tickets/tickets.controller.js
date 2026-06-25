@@ -2,6 +2,11 @@ const prisma = require('../../lib/prisma');
 const { ticketVisibilityWhere } = require('../../lib/ticketVisibility');
 const { calculateSlaBadge } = require('../../lib/slaBadge');
 const { applyStatusTransition } = require('../../lib/ticketStatus');
+const {
+  notifyTicketAssigned,
+  notifyTicketStatusChanged,
+  notifyTicketReopened,
+} = require('../../lib/notificationService');
 
 const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title'];
 const DEFAULT_PAGE_SIZE = 50;
@@ -153,6 +158,18 @@ async function update(req, res) {
     updatedTicket = ticket;
   }
 
+  if (directData.assignedToId !== undefined && directData.assignedToId !== ticket.assignedToId) {
+    notifyTicketAssigned(directData.assignedToId, updatedTicket);
+  }
+  if (hasStatusChange) {
+    const wasReopen = ticket.status === 'RESOLVIDO' && status === 'EM_ANDAMENTO';
+    if (wasReopen) {
+      notifyTicketReopened(updatedTicket.assignedToId, updatedTicket);
+    } else {
+      notifyTicketStatusChanged(updatedTicket.requesterId, updatedTicket);
+    }
+  }
+
   res.json(serializeTicket(updatedTicket));
 }
 
@@ -171,6 +188,7 @@ async function reopen(req, res) {
   }
 
   const updated = await applyStatusTransition(ticket, 'EM_ANDAMENTO', { id: req.user.id, permissions: req.user.permissions });
+  notifyTicketReopened(updated.assignedToId, updated);
   res.json(serializeTicket(updated));
 }
 
