@@ -23,7 +23,7 @@ function generateCsv(summary) {
   lines.push('Técnico,Setor,Chamados,Média 1ª resposta (min),Média resolução (min),SLA cumprido');
   for (const u of byUser) {
     lines.push(
-      `${u.userName},${u.sectorName},${u.totalTickets},${fmt(u.avgFirstResponseMinutes)},${fmt(u.avgResolutionMinutes)},${fmtRate(u.slaComplianceRate)}`
+      `${u.userName},${fmt(u.sectorName)},${u.totalTickets},${fmt(u.avgFirstResponseMinutes)},${fmt(u.avgResolutionMinutes)},${fmtRate(u.slaComplianceRate)}`
     );
   }
 

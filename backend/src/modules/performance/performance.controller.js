@@ -158,6 +158,9 @@ async function summary(req, res) {
 
 async function drilldown(req, res) {
   const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'id deve ser um número inteiro positivo.' });
+  }
   const dates = parseDates(req, res);
   if (!dates) return;
   const { fromDate, toDate } = dates;

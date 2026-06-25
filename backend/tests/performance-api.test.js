@@ -181,6 +181,20 @@ test('GET /summary retorna 403 sem view_performance_panel', async () => {
   expect(res.status).toBe(403);
 });
 
+test('GET /summary retorna 0 chamados para sectorId sem dados', async () => {
+  const emptySector = await prisma.sector.create({ data: { name: 'Setor Vazio Perf' } });
+  try {
+    const res = await request(app)
+      .get(`/api/performance/summary?from=${PERIOD_FROM}&to=${PERIOD_TO}&sectorId=${emptySector.id}`)
+      .set('Authorization', `Bearer ${techToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.overall.totalTickets).toBe(0);
+    expect(res.body.byUser).toHaveLength(0);
+  } finally {
+    await prisma.sector.delete({ where: { id: emptySector.id } });
+  }
+});
+
 // --- drilldown ---
 
 test('GET /users/:id/drilldown retorna métricas e byStatus com zeros', async () => {

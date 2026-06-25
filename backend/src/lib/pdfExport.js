@@ -37,7 +37,7 @@ async function generatePdf(summary) {
       doc.fontSize(10);
       for (const u of byUser) {
         doc.text(
-          `${u.userName} (${u.sectorName}) — ${u.totalTickets} chamados | ` +
+          `${u.userName} (${fmt(u.sectorName)}) — ${u.totalTickets} chamados | ` +
           `1ª resp: ${fmt(u.avgFirstResponseMinutes)} min | ` +
           `Resolução: ${fmt(u.avgResolutionMinutes)} min | ` +
           `SLA: ${fmtRate(u.slaComplianceRate)}`
