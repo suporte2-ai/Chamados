@@ -9,5 +9,7 @@ const authenticated = asyncHandler(authenticate);
 router.post('/tickets', authenticated, asyncHandler(controller.create));
 router.get('/tickets', authenticated, asyncHandler(controller.list));
 router.get('/tickets/:id', authenticated, asyncHandler(controller.detail));
+router.patch('/tickets/:id', authenticated, asyncHandler(controller.update));
+router.post('/tickets/:id/reopen', authenticated, asyncHandler(controller.reopen));
 
 module.exports = router;

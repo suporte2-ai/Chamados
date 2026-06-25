@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const { ticketVisibilityWhere } = require('../../lib/ticketVisibility');
 const { calculateSlaBadge } = require('../../lib/slaBadge');
+const { applyStatusTransition } = require('../../lib/ticketStatus');
 
 const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title'];
 const DEFAULT_PAGE_SIZE = 50;
@@ -99,4 +100,49 @@ async function detail(req, res) {
   res.json({ ...serializeTicket(ticket), comments });
 }
 
-module.exports = { create, list, detail };
+async function update(req, res) {
+  const id = Number(req.params.id);
+  const { status, assignedToId, estimatedCost } = req.body;
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  if (!ticket) {
+    return res.status(404).json({ error: 'Chamado não encontrado.' });
+  }
+
+  if (assignedToId !== undefined && !req.user.permissions.has('reassign_tickets')) {
+    return res.status(403).json({ error: 'Permissão insuficiente para atribuir este chamado.' });
+  }
+  if (estimatedCost !== undefined && !req.user.permissions.has('view_financial_reports')) {
+    return res.status(403).json({ error: 'Permissão insuficiente para definir o custo estimado.' });
+  }
+
+  let updatedTicket = ticket;
+
+  if (status !== undefined) {
+    updatedTicket = await applyStatusTransition(updatedTicket, status, { id: req.user.id, permissions: req.user.permissions });
+  }
+
+  const directData = {};
+  if (assignedToId !== undefined) directData.assignedToId = assignedToId;
+  if (estimatedCost !== undefined) directData.estimatedCost = estimatedCost;
+
+  if (Object.keys(directData).length > 0) {
+    updatedTicket = await prisma.ticket.update({ where: { id }, data: directData });
+  }
+
+  res.json(serializeTicket(updatedTicket));
+}
+
+async function reopen(req, res) {
+  const id = Number(req.params.id);
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  if (!ticket) {
+    return res.status(404).json({ error: 'Chamado não encontrado.' });
+  }
+
+  const updated = await applyStatusTransition(ticket, 'EM_ANDAMENTO', { id: req.user.id, permissions: req.user.permissions });
+  res.json(serializeTicket(updated));
+}
+
+module.exports = { create, list, detail, update, reopen };
