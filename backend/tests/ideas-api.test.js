@@ -212,6 +212,15 @@ test('PATCH /ideas/:id/status — sem manage_ideas retorna 403', async () => {
   expect(res.status).toBe(403);
 });
 
+test('PATCH /ideas/:id/status — inexistente retorna 404', async () => {
+  const res = await request(app)
+    .patch('/api/ideas/999999/status')
+    .set('Authorization', `Bearer ${gestorToken}`)
+    .send({ status: 'EM_ANALISE' });
+
+  expect(res.status).toBe(404);
+});
+
 // --- vote ---
 
 test('POST /ideas/:id/vote — vota em EM_ANALISE; voteCount=1 voted=true', async () => {

@@ -159,7 +159,11 @@ async function toggleVote(req, res) {
     await prisma.ideaVote.create({ data: { ideaId: id, userId: req.user.id } });
   }
 
-  const voteCount = await prisma.ideaVote.count({ where: { ideaId: id } });
+  const updated = await prisma.idea.findUnique({
+    where: { id },
+    include: { _count: { select: { votes: true } } },
+  });
+  const voteCount = updated._count.votes;
   res.json({ voted: !existing, voteCount });
 }
 
