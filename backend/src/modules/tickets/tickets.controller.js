@@ -1,0 +1,102 @@
+const prisma = require('../../lib/prisma');
+const { ticketVisibilityWhere } = require('../../lib/ticketVisibility');
+const { calculateSlaBadge } = require('../../lib/slaBadge');
+
+const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title'];
+const DEFAULT_PAGE_SIZE = 50;
+
+function serializeTicket(ticket) {
+  return { ...ticket, slaBadge: calculateSlaBadge(ticket) };
+}
+
+async function create(req, res) {
+  const { title, description, categoryId, subcategoryId, urgency } = req.body;
+  if (!title || !description || !categoryId || !subcategoryId || !urgency) {
+    return res.status(400).json({ error: 'title, description, categoryId, subcategoryId e urgency são obrigatórios.' });
+  }
+
+  const slaConfig = await prisma.slaConfig.findUnique({ where: { urgency } });
+  if (!slaConfig) {
+    return res.status(400).json({ error: `Não há configuração de SLA para a urgência ${urgency}.` });
+  }
+
+  const now = new Date();
+  const slaFirstResponseDeadline = new Date(now.getTime() + slaConfig.firstResponseHours * 60 * 60 * 1000);
+  const slaResolutionDeadline = new Date(now.getTime() + slaConfig.resolutionHours * 60 * 60 * 1000);
+
+  const ticket = await prisma.ticket.create({
+    data: {
+      title,
+      description,
+      categoryId,
+      subcategoryId,
+      urgency,
+      requesterId: req.user.id,
+      sectorId: req.user.sectorId,
+      slaFirstResponseDeadline,
+      slaResolutionDeadline,
+    },
+  });
+
+  await prisma.ticketTimeLog.create({
+    data: { ticketId: ticket.id, eventType: 'CREATED', toStatus: 'ABERTO', authorId: req.user.id, occurredAt: now },
+  });
+
+  res.status(201).json(serializeTicket(ticket));
+}
+
+async function list(req, res) {
+  const { status, urgency, categoryId, subcategoryId, assignedToId, sectorId, search, sortBy, sortOrder } = req.query;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const pageSize = Math.max(1, Number(req.query.pageSize) || DEFAULT_PAGE_SIZE);
+
+  const where = { ...ticketVisibilityWhere(req.user) };
+  if (status) where.status = status;
+  if (urgency) where.urgency = urgency;
+  if (categoryId) where.categoryId = Number(categoryId);
+  if (subcategoryId) where.subcategoryId = Number(subcategoryId);
+  if (assignedToId) where.assignedToId = Number(assignedToId);
+  if (sectorId) where.sectorId = Number(sectorId);
+  if (search) {
+    where.AND = [
+      ...(where.AND || []),
+      { OR: [{ title: { contains: search, mode: 'insensitive' } }, { description: { contains: search, mode: 'insensitive' } }] },
+    ];
+  }
+
+  const orderBy = SORT_WHITELIST.includes(sortBy) ? { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' } : { createdAt: 'desc' };
+
+  const [items, total] = await Promise.all([
+    prisma.ticket.findMany({ where, orderBy, skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.ticket.count({ where }),
+  ]);
+
+  res.json({ items: items.map(serializeTicket), total, page, pageSize });
+}
+
+async function detail(req, res) {
+  const id = Number(req.params.id);
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  if (!ticket) {
+    return res.status(404).json({ error: 'Chamado não encontrado.' });
+  }
+
+  const visibilityWhere = ticketVisibilityWhere(req.user);
+  const visible = await prisma.ticket.findFirst({ where: { id, ...visibilityWhere } });
+  if (!visible) {
+    return res.status(403).json({ error: 'Você não tem acesso a este chamado.' });
+  }
+
+  const comments = await prisma.ticketComment.findMany({
+    where: {
+      ticketId: id,
+      ...(req.user.permissions.has('view_internal_notes') ? {} : { isInternal: false }),
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  res.json({ ...serializeTicket(ticket), comments });
+}
+
+module.exports = { create, list, detail };
