@@ -45,7 +45,7 @@ async function create(req, res) {
   }
 
   const [comment] = await prisma.$transaction(operations);
-  notifyTicketComment(ticket, req.user.id, Boolean(isInternal));
+  await notifyTicketComment(ticket, req.user.id, Boolean(isInternal));
   res.status(201).json(comment);
 }
 

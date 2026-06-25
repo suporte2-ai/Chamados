@@ -11,6 +11,7 @@ const sectorsRoutes = require('./modules/sectors/sectors.routes');
 const ticketsRoutes = require('./modules/tickets/tickets.routes');
 const performanceRoutes = require('./modules/performance/performance.routes');
 const ideasRoutes = require('./modules/ideas/ideas.routes');
+const notificationsRoutes = require('./modules/notifications/notifications.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api', sectorsRoutes);
 app.use('/api', ticketsRoutes);
 app.use('/api', performanceRoutes);
 app.use('/api', ideasRoutes);
+app.use('/api', notificationsRoutes);
 
 app.use(errorHandler);
 

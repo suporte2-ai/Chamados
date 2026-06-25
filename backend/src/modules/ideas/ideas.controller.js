@@ -129,7 +129,7 @@ async function updateStatus(req, res) {
     include: ideaInclude(req.user.id),
   });
 
-  notifyIdeaStatusChanged(idea.authorId, updated);
+  await notifyIdeaStatusChanged(idea.authorId, updated);
   res.json(serialize(updated, req.user.id, true));
 }
 
@@ -167,7 +167,7 @@ async function toggleVote(req, res) {
   });
   const voteCount = updated._count.votes;
   if (!existing) {
-    notifyIdeaVote(idea.authorId, req.user.id, idea);
+    await notifyIdeaVote(idea.authorId, req.user.id, idea);
   }
   res.json({ voted: !existing, voteCount });
 }

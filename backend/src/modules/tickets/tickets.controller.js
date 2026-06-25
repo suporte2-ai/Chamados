@@ -159,14 +159,14 @@ async function update(req, res) {
   }
 
   if (directData.assignedToId !== undefined && directData.assignedToId !== ticket.assignedToId) {
-    notifyTicketAssigned(directData.assignedToId, updatedTicket);
+    await notifyTicketAssigned(directData.assignedToId, updatedTicket);
   }
   if (hasStatusChange) {
     const wasReopen = ticket.status === 'RESOLVIDO' && status === 'EM_ANDAMENTO';
     if (wasReopen) {
-      notifyTicketReopened(updatedTicket.assignedToId, updatedTicket);
+      await notifyTicketReopened(updatedTicket.assignedToId, updatedTicket);
     } else {
-      notifyTicketStatusChanged(updatedTicket.requesterId, updatedTicket);
+      await notifyTicketStatusChanged(updatedTicket.requesterId, updatedTicket);
     }
   }
 
@@ -188,7 +188,7 @@ async function reopen(req, res) {
   }
 
   const updated = await applyStatusTransition(ticket, 'EM_ANDAMENTO', { id: req.user.id, permissions: req.user.permissions });
-  notifyTicketReopened(updated.assignedToId, updated);
+  await notifyTicketReopened(updated.assignedToId, updated);
   res.json(serializeTicket(updated));
 }
 
