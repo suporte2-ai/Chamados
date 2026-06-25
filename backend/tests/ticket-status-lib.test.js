@@ -164,3 +164,13 @@ test('FECHADO is terminal: no transition is allowed out of it', async () => {
 
   await expect(applyStatusTransition(ticket, 'EM_ANDAMENTO', actor)).rejects.toMatchObject({ statusCode: 400 });
 });
+
+test('moving to AGUARDANDO by the assignee does NOT record firstResponseAt', async () => {
+  const ticket = await createTicket({ status: 'ABERTO' });
+  const actor = { id: assignee.id, permissions: new Set([]) };
+
+  await applyStatusTransition(ticket, 'AGUARDANDO', actor);
+
+  const updated = await prisma.ticket.findUnique({ where: { id: ticket.id } });
+  expect(updated.firstResponseAt).toBeNull();
+});

@@ -103,7 +103,7 @@ async function applyStatusTransition(ticket, newStatus, actor) {
 
   const data = { status: newStatus };
 
-  if (!ticket.firstResponseAt && ticket.assignedToId && actor.id === ticket.assignedToId) {
+  if (!ticket.firstResponseAt && ticket.assignedToId && actor.id === ticket.assignedToId && newStatus !== 'AGUARDANDO') {
     data.firstResponseAt = now;
     data.timeToFirstResponseMinutes = Math.round((now.getTime() - ticket.createdAt.getTime()) / 60000);
     operations.push(
