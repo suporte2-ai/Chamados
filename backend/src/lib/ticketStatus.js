@@ -29,8 +29,8 @@ function hasStatusChangePermission(ticket, newStatus, actor) {
 // Soma os intervalos PAUSE_START -> PAUSE_END já registrados; se houver um
 // PAUSE_START sem PAUSE_END correspondente (ticket atualmente em AGUARDANDO),
 // conta o intervalo até `asOf` (o `now()` da transição que está fechando a pausa).
-async function sumPauseMinutes(ticketId, asOf) {
-  const logs = await prisma.ticketTimeLog.findMany({
+async function sumPauseMinutes(ticketId, asOf, db) {
+  const logs = await db.ticketTimeLog.findMany({
     where: { ticketId, eventType: { in: ['PAUSE_START', 'PAUSE_END'] } },
     orderBy: { occurredAt: 'asc' },
   });
@@ -51,7 +51,11 @@ async function sumPauseMinutes(ticketId, asOf) {
   return Math.round(totalMs / 60000);
 }
 
-async function applyStatusTransition(ticket, newStatus, actor) {
+// `tx` is an optional Prisma interactive-transaction client. When provided, all
+// operations run inside the caller's transaction instead of a new one.
+async function applyStatusTransition(ticket, newStatus, actor, tx) {
+  const db = tx || prisma;
+
   if (!isValidTransition(ticket.status, newStatus)) {
     const error = new Error(`Transição inválida de ${ticket.status} para ${newStatus}.`);
     error.statusCode = 400;
@@ -70,13 +74,14 @@ async function applyStatusTransition(ticket, newStatus, actor) {
   const wasPaused = ticket.status === 'AGUARDANDO';
   const isReopening = isReopen(ticket.status, newStatus);
 
-  const pauseMinutes = newStatus === 'RESOLVIDO' ? await sumPauseMinutes(ticket.id, now) : 0;
+  const pauseMinutes = newStatus === 'RESOLVIDO' ? await sumPauseMinutes(ticket.id, now, db) : 0;
 
+  // Build the array of Prisma write operations to run atomically.
   const operations = [];
 
   if (wasPaused) {
     operations.push(
-      prisma.ticketTimeLog.create({
+      db.ticketTimeLog.create({
         data: { ticketId: ticket.id, eventType: 'PAUSE_END', fromStatus: 'AGUARDANDO', toStatus: newStatus, authorId: actor.id, occurredAt: now },
       })
     );
@@ -84,7 +89,7 @@ async function applyStatusTransition(ticket, newStatus, actor) {
 
   if (newStatus === 'AGUARDANDO') {
     operations.push(
-      prisma.ticketTimeLog.create({
+      db.ticketTimeLog.create({
         data: { ticketId: ticket.id, eventType: 'PAUSE_START', fromStatus: ticket.status, toStatus: 'AGUARDANDO', authorId: actor.id, occurredAt: now },
       })
     );
@@ -96,7 +101,7 @@ async function applyStatusTransition(ticket, newStatus, actor) {
   else if (newStatus === 'FECHADO') mainEventType = 'CLOSED';
 
   operations.push(
-    prisma.ticketTimeLog.create({
+    db.ticketTimeLog.create({
       data: { ticketId: ticket.id, eventType: mainEventType, fromStatus: ticket.status, toStatus: newStatus, authorId: actor.id, occurredAt: now },
     })
   );
@@ -107,7 +112,7 @@ async function applyStatusTransition(ticket, newStatus, actor) {
     data.firstResponseAt = now;
     data.timeToFirstResponseMinutes = Math.round((now.getTime() - ticket.createdAt.getTime()) / 60000);
     operations.push(
-      prisma.ticketTimeLog.create({
+      db.ticketTimeLog.create({
         data: { ticketId: ticket.id, eventType: 'FIRST_RESPONSE', fromStatus: ticket.status, toStatus: newStatus, authorId: actor.id, occurredAt: now },
       })
     );
@@ -127,9 +132,23 @@ async function applyStatusTransition(ticket, newStatus, actor) {
     data.timeToResolutionMinutes = null;
   }
 
-  operations.push(prisma.ticket.update({ where: { id: ticket.id }, data }));
+  operations.push(db.ticket.update({ where: { id: ticket.id }, data }));
 
-  const results = await prisma.$transaction(operations);
+  // When a caller's interactive transaction (`tx`) is already in progress, the
+  // operations are Prisma promise builders that share that transaction's
+  // connection — executing them via prisma.$transaction would open a nested
+  // transaction which is not supported. Run them sequentially instead.
+  // When there is no outer transaction, wrap them in a new one for atomicity.
+  let results;
+  if (tx) {
+    results = [];
+    for (const op of operations) {
+      results.push(await op);
+    }
+  } else {
+    results = await prisma.$transaction(operations);
+  }
+
   return results[results.length - 1];
 }
 

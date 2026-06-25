@@ -122,18 +122,35 @@ async function update(req, res) {
     return res.status(403).json({ error: 'Permissão insuficiente para definir o custo estimado.' });
   }
 
-  let updatedTicket = ticket;
-
-  if (status !== undefined) {
-    updatedTicket = await applyStatusTransition(updatedTicket, status, { id: req.user.id, permissions: req.user.permissions });
+  if (assignedToId !== undefined) {
+    const assignee = await prisma.user.findUnique({ where: { id: assignedToId } });
+    if (!assignee) {
+      return res.status(400).json({ error: 'Usuário assignee não encontrado.' });
+    }
   }
 
   const directData = {};
   if (assignedToId !== undefined) directData.assignedToId = assignedToId;
   if (estimatedCost !== undefined) directData.estimatedCost = estimatedCost;
 
-  if (Object.keys(directData).length > 0) {
+  const hasDirectUpdate = Object.keys(directData).length > 0;
+  const hasStatusChange = status !== undefined;
+
+  let updatedTicket;
+
+  if (hasDirectUpdate && hasStatusChange) {
+    // Both changes must be atomic: apply directData first, then the status transition,
+    // all within a single interactive transaction.
+    updatedTicket = await prisma.$transaction(async (tx) => {
+      const afterDirect = await tx.ticket.update({ where: { id }, data: directData });
+      return applyStatusTransition(afterDirect, status, { id: req.user.id, permissions: req.user.permissions }, tx);
+    });
+  } else if (hasStatusChange) {
+    updatedTicket = await applyStatusTransition(ticket, status, { id: req.user.id, permissions: req.user.permissions });
+  } else if (hasDirectUpdate) {
     updatedTicket = await prisma.ticket.update({ where: { id }, data: directData });
+  } else {
+    updatedTicket = ticket;
   }
 
   res.json(serializeTicket(updatedTicket));

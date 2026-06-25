@@ -85,6 +85,7 @@ async function seedRolesAndPermissions() {
       'view_internal_notes',
       'reopen_tickets',
       'view_all_tickets',
+      'update_cost',
     ],
     [tecnico.id]: ['view_internal_notes', 'reopen_tickets', 'view_own_metrics', 'view_sector_tickets'],
     [usuarioFinal.id]: [],

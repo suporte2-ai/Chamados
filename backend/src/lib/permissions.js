@@ -12,6 +12,7 @@ const PERMISSION_KEYS = [
   'reopen_tickets',
   'view_all_tickets',
   'view_sector_tickets',
+  'update_cost',
 ];
 
 const FIELD_KEYS = ['assigned_to', 'estimated_cost', 'internal_notes', 'sla_badge'];
