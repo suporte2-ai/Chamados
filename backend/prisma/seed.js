@@ -16,27 +16,80 @@ const URGENCY_SLA_HOURS = {
 
 const TICKET_TITLES = [
   'Computador não liga',
+  'Monitor com tela piscando',
+  'Teclado com teclas travadas',
+  'HD com barulho estranho',
+  'Notebook superaquecendo',
   'Erro ao acessar sistema financeiro',
-  'Solicitação de novo crachá',
+  'VPN não conecta no home office',
+  'Outlook não sincroniza e-mails',
+  'Erro de licença no pacote Office',
+  'Sistema lento após atualização',
   'Internet instável no setor',
-  'Pedido de reembolso de viagem',
-  'Impressora sem tonner',
-  'Acesso negado à pasta compartilhada',
+  'Sem acesso à pasta compartilhada',
+  'Impressora de rede não encontrada',
+  'Wi-Fi cai frequentemente na sala de reunião',
+  'Solicitação de novo crachá',
   'Dúvida sobre benefício de saúde',
-  'Lentidão no sistema de RH',
+  'Férias não aprovadas no sistema',
+  'Erro no controle de ponto',
+  'Pedido de segunda via do holerite',
+  'Pedido de reembolso de viagem',
+  'NF-e rejeitada pela SEFAZ',
+  'Divergência no extrato bancário',
+  'Erro no fechamento de caixa',
+  'Dúvida sobre adiantamento salarial',
+  'Impressora sem tonner',
   'Manutenção do ar-condicionado',
+  'Lâmpada queimada na sala 204',
+  'Vazamento na copa do 3º andar',
+  'Solicitação de cadeira ergonômica',
+  'Cafeteira com defeito na cozinha',
+];
+
+const COMMENT_BODIES = [
+  'Chamado recebido. Iniciando análise.',
+  'Aguardando retorno do usuário para prosseguir.',
+  'Problema identificado. Aplicando correção.',
+  'Necessito de acesso remoto para diagnóstico.',
+  'Verificado e corrigido. Por favor, confirme se o problema persiste.',
+  'Escalando para o fornecedor.',
+  'Peça de reposição solicitada. Prazo: 2 dias úteis.',
+  'Usuário confirmou resolução.',
+  'Realizei a manutenção preventiva conforme solicitado.',
+  'Documento enviado por e-mail separado.',
+  'Configuração atualizada. Favor testar.',
+  'Aguardando aprovação da gestão para prosseguir.',
+];
+
+const INTERNAL_NOTES = [
+  'Usuário já abriu chamado similar 3x este mês.',
+  'Hardware fora de garantia — avaliar substituição.',
+  'Problema recorrente no setor: investigar causa raiz.',
+  'Custo pode ser alto — notificar gestor antes de prosseguir.',
 ];
 
 const IDEA_DEFINITIONS = [
-  { title: 'Padronizar respostas automáticas de chamados', areaImpacted: 'TI', expectedBenefit: 'Reduz tempo de primeira resposta', status: 'IMPLEMENTADA' },
-  { title: 'Checklist de onboarding para novos colaboradores', areaImpacted: 'RH', expectedBenefit: 'Reduz erros no processo de admissão', status: 'EM_IMPLEMENTACAO' },
-  { title: 'Aprovação digital de reembolsos', areaImpacted: 'Financeiro', expectedBenefit: 'Agiliza reembolsos em até 2 dias', status: 'APROVADA' },
-  { title: 'Manutenção preventiva trimestral de ar-condicionado', areaImpacted: 'Infraestrutura', expectedBenefit: 'Reduz chamados de manutenção corretiva', status: 'EM_ANALISE' },
-  { title: 'Base de conhecimento self-service', areaImpacted: 'TI', expectedBenefit: 'Reduz volume de chamados repetitivos', status: 'NOVA' },
-  { title: 'Pesquisa de satisfação pós-fechamento', areaImpacted: 'TI', expectedBenefit: 'Mede qualidade do atendimento', status: 'NOVA' },
-  { title: 'Revisão do plano de benefícios', areaImpacted: 'RH', expectedBenefit: 'Aumenta satisfação dos colaboradores', status: 'ARQUIVADA' },
-  { title: 'Dashboard de gastos por setor', areaImpacted: 'Financeiro', expectedBenefit: 'Melhora visibilidade orçamentária', status: 'EM_ANALISE' },
-  { title: 'App de abertura de chamados via celular', areaImpacted: 'TI', expectedBenefit: 'Facilita abertura de chamados em campo', status: 'APROVADA' },
+  { title: 'Padronizar respostas automáticas de chamados', areaImpacted: 'TI', expectedBenefit: 'Reduz tempo de primeira resposta em 30%', status: 'IMPLEMENTADA', managerNote: 'Implementado em Jan/2026. Resultados confirmados.' },
+  { title: 'Checklist de onboarding para novos colaboradores', areaImpacted: 'RH', expectedBenefit: 'Reduz erros no processo de admissão', status: 'IMPLEMENTADA', managerNote: 'Processo documentado e em uso desde Fev/2026.' },
+  { title: 'Aprovação digital de reembolsos', areaImpacted: 'Financeiro', expectedBenefit: 'Agiliza reembolsos em até 2 dias', status: 'EM_IMPLEMENTACAO', managerNote: 'Em desenvolvimento com equipe de TI. Previsão: Jul/2026.' },
+  { title: 'App de abertura de chamados via celular', areaImpacted: 'TI', expectedBenefit: 'Facilita abertura de chamados em campo', status: 'EM_IMPLEMENTACAO', managerNote: 'MVP em testes internos. Lançamento previsto para Ago/2026.' },
+  { title: 'Base de conhecimento self-service', areaImpacted: 'TI', expectedBenefit: 'Reduz volume de chamados repetitivos em 20%', status: 'APROVADA', managerNote: 'Aprovado em reunião de 10/Jun. Aguardando alocação de equipe.' },
+  { title: 'Pesquisa de satisfação pós-fechamento', areaImpacted: 'TI', expectedBenefit: 'Mede qualidade do atendimento', status: 'APROVADA', managerNote: 'Aprovado. Integração com e-mail planejada.' },
+  { title: 'Dashboard de gastos por setor', areaImpacted: 'Financeiro', expectedBenefit: 'Melhora visibilidade orçamentária', status: 'APROVADA', managerNote: 'Aprovado pela diretoria financeira em 05/Jun.' },
+  { title: 'Manutenção preventiva trimestral de equipamentos', areaImpacted: 'TI', expectedBenefit: 'Reduz chamados corretivos em 40%', status: 'EM_ANALISE', managerNote: null },
+  { title: 'Programa de bem-estar para colaboradores', areaImpacted: 'RH', expectedBenefit: 'Reduz absenteísmo', status: 'EM_ANALISE', managerNote: null },
+  { title: 'Integração do helpdesk com WhatsApp', areaImpacted: 'TI', expectedBenefit: 'Canal adicional para abertura de chamados', status: 'EM_ANALISE', managerNote: null },
+  { title: 'Política de uso consciente de impressoras', areaImpacted: 'Operações', expectedBenefit: 'Reduz custo de tonner em 25%', status: 'EM_ANALISE', managerNote: null },
+  { title: 'Revisão do plano de benefícios', areaImpacted: 'RH', expectedBenefit: 'Aumenta satisfação dos colaboradores', status: 'ARQUIVADA', managerNote: 'Arquivado por restrição orçamentária em 2026.' },
+  { title: 'Compra de tablets para técnicos de campo', areaImpacted: 'TI', expectedBenefit: 'Aumenta produtividade em atendimentos externos', status: 'ARQUIVADA', managerNote: 'Custo elevado. Revisitar em 2027.' },
+  { title: 'Horário flexível para equipe de TI', areaImpacted: 'RH', expectedBenefit: 'Melhora retenção de talentos', status: 'ARQUIVADA', managerNote: 'Não alinhado com política atual da empresa.' },
+  { title: 'Treinamento mensal de segurança da informação', areaImpacted: 'TI', expectedBenefit: 'Reduz incidentes de phishing', status: 'NOVA', managerNote: null },
+  { title: 'Espaço de descompressão na empresa', areaImpacted: 'RH', expectedBenefit: 'Melhora bem-estar e produtividade', status: 'NOVA', managerNote: null },
+  { title: 'Automação de relatórios mensais de TI', areaImpacted: 'TI', expectedBenefit: 'Economiza 4h/mês de trabalho manual', status: 'NOVA', managerNote: null },
+  { title: 'Biblioteca de livros técnicos compartilhada', areaImpacted: 'RH', expectedBenefit: 'Incentiva desenvolvimento profissional', status: 'NOVA', managerNote: null },
+  { title: 'Painel de status dos sistemas em tempo real', areaImpacted: 'TI', expectedBenefit: 'Reduz chamados de "sistema fora"', status: 'NOVA', managerNote: null },
+  { title: 'Revisão do processo de compras de TI', areaImpacted: 'Financeiro', expectedBenefit: 'Reduz tempo de aprovação de 10 para 3 dias', status: 'NOVA', managerNote: null },
 ];
 
 function randomInt(min, max) {
@@ -121,12 +174,13 @@ async function seedRolesAndPermissions() {
 }
 
 async function seedSectors() {
-  const names = ['TI', 'RH', 'Financeiro'];
-  const sectors = [];
+  const names = ['TI', 'RH', 'Financeiro', 'Operações', 'Jurídico'];
+  const created = [];
   for (const name of names) {
-    sectors.push(await prisma.sector.create({ data: { name } }));
+    created.push(await prisma.sector.create({ data: { name } }));
   }
-  return sectors;
+  const [ti, rh, financeiro, operacoes, juridico] = created;
+  return { ti, rh, financeiro, operacoes, juridico };
 }
 
 async function seedCategories() {
@@ -159,18 +213,29 @@ async function seedSlaConfig() {
 
 async function seedUsers(roles, sectors) {
   const passwordHash = await bcrypt.hash('Senha123!', 10);
+  const { ti, rh, financeiro, operacoes, juridico } = sectors;
 
   const definitions = [
-    { name: 'Ana Souza', email: 'admin@helpdesk.com', roleId: roles.admin.id, sectorId: sectors[0].id },
-    { name: 'Beatriz Lima', email: 'gestor1@helpdesk.com', roleId: roles.gestor.id, sectorId: sectors[0].id },
-    { name: 'Renato Alves', email: 'gestor2@helpdesk.com', roleId: roles.gestor.id, sectorId: sectors[1].id },
-    { name: 'Carla Mendes', email: 'tecnico1@helpdesk.com', roleId: roles.tecnico.id, sectorId: sectors[0].id },
-    { name: 'Diego Santos', email: 'tecnico2@helpdesk.com', roleId: roles.tecnico.id, sectorId: sectors[0].id },
-    { name: 'Fernanda Costa', email: 'tecnico3@helpdesk.com', roleId: roles.tecnico.id, sectorId: sectors[1].id },
-    { name: 'Gustavo Pereira', email: 'tecnico4@helpdesk.com', roleId: roles.tecnico.id, sectorId: sectors[2].id },
-    { name: 'Helena Rocha', email: 'usuario1@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: sectors[0].id },
-    { name: 'Igor Martins', email: 'usuario2@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: sectors[1].id },
-    { name: 'Julia Ferreira', email: 'usuario3@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: sectors[2].id },
+    { name: 'Ana Souza',       email: 'admin@helpdesk.com',    roleId: roles.admin.id,        sectorId: ti.id },
+    { name: 'Beatriz Lima',    email: 'gestor1@helpdesk.com',  roleId: roles.gestor.id,       sectorId: ti.id },
+    { name: 'Renato Alves',    email: 'gestor2@helpdesk.com',  roleId: roles.gestor.id,       sectorId: rh.id },
+    { name: 'Carla Mendes',    email: 'tecnico1@helpdesk.com', roleId: roles.tecnico.id,      sectorId: ti.id },
+    { name: 'Diego Santos',    email: 'tecnico2@helpdesk.com', roleId: roles.tecnico.id,      sectorId: ti.id },
+    { name: 'Fernanda Costa',  email: 'tecnico3@helpdesk.com', roleId: roles.tecnico.id,      sectorId: rh.id },
+    { name: 'Gustavo Pereira', email: 'tecnico4@helpdesk.com', roleId: roles.tecnico.id,      sectorId: financeiro.id },
+    { name: 'Hugo Neves',      email: 'tecnico5@helpdesk.com', roleId: roles.tecnico.id,      sectorId: operacoes.id },
+    { name: 'Isabela Moura',   email: 'tecnico6@helpdesk.com', roleId: roles.tecnico.id,      sectorId: rh.id },
+    { name: 'Jonas Barbosa',   email: 'tecnico7@helpdesk.com', roleId: roles.tecnico.id,      sectorId: ti.id },
+    { name: 'Karen Lopes',     email: 'tecnico8@helpdesk.com', roleId: roles.tecnico.id,      sectorId: financeiro.id },
+    { name: 'Helena Rocha',    email: 'usuario1@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: ti.id },
+    { name: 'Igor Martins',    email: 'usuario2@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: rh.id },
+    { name: 'Julia Ferreira',  email: 'usuario3@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: financeiro.id },
+    { name: 'Lucas Oliveira',  email: 'usuario4@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: operacoes.id },
+    { name: 'Marina Castro',   email: 'usuario5@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: juridico.id },
+    { name: 'Nelson Gomes',    email: 'usuario6@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: ti.id },
+    { name: 'Olivia Pinto',    email: 'usuario7@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: rh.id },
+    { name: 'Paulo Ramos',     email: 'usuario8@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: financeiro.id },
+    { name: 'Rafaela Silva',   email: 'usuario9@helpdesk.com', roleId: roles.usuarioFinal.id, sectorId: operacoes.id },
   ];
 
   const users = [];
@@ -357,9 +422,10 @@ async function createTicketWithTimeline({
   const timeToResolutionMinutes = Math.round((resolvedAt - createdAt) / MINUTE_MS) - pauseMinutes;
 
   if (finalStatus === 'RESOLVIDO') {
+    const estimatedCost = Math.random() < 0.2 ? randomInt(50, 2000) : null;
     await prisma.ticket.update({
       where: { id: ticket.id },
-      data: { status: 'RESOLVIDO', firstResponseAt, timeToFirstResponseMinutes, resolvedAt, timeToResolutionMinutes },
+      data: { status: 'RESOLVIDO', firstResponseAt, timeToFirstResponseMinutes, resolvedAt, timeToResolutionMinutes, estimatedCost },
     });
     return ticket;
   }
@@ -385,6 +451,7 @@ async function createTicketWithTimeline({
       occurredAt: closedAt,
     },
   });
+  const estimatedCost = Math.random() < 0.2 ? randomInt(50, 2000) : null;
   await prisma.ticket.update({
     where: { id: ticket.id },
     data: {
@@ -394,27 +461,34 @@ async function createTicketWithTimeline({
       resolvedAt,
       timeToResolutionMinutes,
       closedAt,
+      estimatedCost,
     },
   });
   return ticket;
 }
 
-async function seedTickets(categories, sectors, users) {
+async function seedTickets(users, categories, sectors) {
   const technicians = users.filter((u) => u.email.startsWith('tecnico'));
   const finalUsers = users.filter((u) => u.email.startsWith('usuario'));
   const urgencies = ['CRITICO', 'ALTO', 'MEDIO', 'BAIXO'];
-  const statusPool = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO', 'RESOLVIDO', 'RESOLVIDO', 'FECHADO', 'FECHADO'];
+  const statusPool = [
+    'ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO',
+    'RESOLVIDO', 'RESOLVIDO', 'RESOLVIDO',
+    'FECHADO', 'FECHADO', 'FECHADO', 'FECHADO',
+  ];
+  const sectorList = Object.values(sectors);
   const now = new Date();
+  const NINETY_DAYS_MINUTES = 90 * 24 * 60;
 
-  for (let i = 0; i < 50; i += 1) {
+  for (let i = 0; i < 200; i += 1) {
     const category = pick(categories);
     const subcategory = pick(category.subcategories);
     const urgency = pick(urgencies);
     const finalStatus = pick(statusPool);
     const requester = pick(finalUsers);
     const assignee = pick(technicians);
-    const sector = sectors.find((s) => s.id === requester.sectorId);
-    const createdAt = new Date(now.getTime() - randomInt(0, 30 * 24 * 60) * MINUTE_MS);
+    const sector = sectorList.find((s) => s.id === requester.sectorId);
+    const createdAt = new Date(now.getTime() - randomInt(0, NINETY_DAYS_MINUTES) * MINUTE_MS);
 
     await createTicketWithTimeline({
       title: pick(TICKET_TITLES),
@@ -429,9 +503,38 @@ async function seedTickets(categories, sectors, users) {
       hadPause: randomInt(0, 1) === 1,
     });
   }
+
+  return prisma.ticket.findMany({
+    select: { id: true, title: true, status: true, requesterId: true, assignedToId: true },
+    orderBy: { id: 'asc' },
+  });
+}
+
+async function seedTicketComments(tickets, users) {
+  const technicians = users.filter((u) => u.email.startsWith('tecnico'));
+
+  for (const ticket of tickets) {
+    if (Math.random() > 0.4) continue;
+
+    const count = randomInt(1, 3);
+    const assigneeTech = technicians.find((t) => t.id === ticket.assignedToId) || pick(technicians);
+    const requester = users.find((u) => u.id === ticket.requesterId);
+
+    for (let i = 0; i < count; i += 1) {
+      const isAssigneeComment = i % 2 === 0;
+      const author = isAssigneeComment && ticket.assignedToId ? assigneeTech : requester;
+      const isInternal = isAssigneeComment && !!ticket.assignedToId && Math.random() < 0.5;
+      const body = isInternal ? pick(INTERNAL_NOTES) : pick(COMMENT_BODIES);
+
+      await prisma.ticketComment.create({
+        data: { ticketId: ticket.id, authorId: author.id, body, isInternal },
+      });
+    }
+  }
 }
 
 async function seedIdeas(users) {
+  const ideas = [];
   for (const def of IDEA_DEFINITIONS) {
     const author = pick(users);
     const idea = await prisma.idea.create({
@@ -443,35 +546,115 @@ async function seedIdeas(users) {
         authorId: author.id,
         isAnonymous: Math.random() < 0.2,
         status: def.status,
+        managerNote: def.managerNote ?? null,
       },
     });
 
-    const voters = users.filter(() => Math.random() < 0.4);
-    for (const voter of voters) {
-      await prisma.ideaVote.create({ data: { ideaId: idea.id, userId: voter.id } });
+    if (def.status === 'EM_ANALISE') {
+      for (const voter of users) {
+        if (Math.random() < 0.45) {
+          await prisma.ideaVote.create({ data: { ideaId: idea.id, userId: voter.id } });
+        }
+      }
     }
 
-    if (def.status !== 'NOVA') {
-      const reviewer = pick(users);
-      await prisma.ideaComment.create({
-        data: { ideaId: idea.id, authorId: reviewer.id, body: `Status atualizado para ${def.status}.` },
-      });
-    }
+    ideas.push(idea);
+  }
+  return ideas;
+}
+
+async function seedNotifications(users, tickets, ideas) {
+  const demoUsers = users.slice(0, 5);
+  const rows = [];
+
+  // TICKET_ASSIGNED (9 ≈ 30%)
+  for (let i = 0; i < 9; i += 1) {
+    const t = tickets[i % tickets.length];
+    rows.push({
+      userId: demoUsers[i % demoUsers.length].id,
+      type: 'TICKET_ASSIGNED',
+      message: `Você foi atribuído ao chamado #${t.id}: ${t.title}`,
+      link: `/tickets/${t.id}`,
+      isRead: i % 2 === 0,
+    });
+  }
+  // TICKET_STATUS_CHANGED (8 ≈ 25%)
+  for (let i = 0; i < 8; i += 1) {
+    const t = tickets[(i + 10) % tickets.length];
+    rows.push({
+      userId: demoUsers[i % demoUsers.length].id,
+      type: 'TICKET_STATUS_CHANGED',
+      message: `O chamado #${t.id} mudou para ${t.status}`,
+      link: `/tickets/${t.id}`,
+      isRead: i % 2 === 0,
+    });
+  }
+  // TICKET_COMMENT (7 ≈ 25%)
+  for (let i = 0; i < 7; i += 1) {
+    const t = tickets[(i + 20) % tickets.length];
+    rows.push({
+      userId: demoUsers[i % demoUsers.length].id,
+      type: 'TICKET_COMMENT',
+      message: `Novo comentário no chamado #${t.id}: ${t.title}`,
+      link: `/tickets/${t.id}`,
+      isRead: i % 2 === 0,
+    });
+  }
+  // IDEA_STATUS_CHANGED (6 ≈ 20%)
+  for (let i = 0; i < 6; i += 1) {
+    const idea = ideas[i % ideas.length];
+    rows.push({
+      userId: demoUsers[i % demoUsers.length].id,
+      type: 'IDEA_STATUS_CHANGED',
+      message: `Sua ideia '${idea.title}' mudou para ${idea.status}`,
+      link: `/ideas/${idea.id}`,
+      isRead: i % 2 === 0,
+    });
+  }
+
+  for (const row of rows) {
+    await prisma.notification.create({ data: row });
   }
 }
 
 async function main() {
+  console.log('Iniciando seed rico...');
   await clearDatabase();
-  const roles = await seedRolesAndPermissions();
-  const sectors = await seedSectors();
-  const categories = await seedCategories();
-  await seedSlaConfig();
-  const users = await seedUsers(roles, sectors);
-  await seedTickets(categories, sectors, users);
-  await seedIdeas(users);
+  console.log('  Banco limpo.');
 
-  console.log('Seed concluído com sucesso.');
-  console.log('Login do administrador: admin@helpdesk.com / Senha123!');
+  const roles = await seedRolesAndPermissions();
+  console.log('  Roles e permissões criados.');
+
+  const sectors = await seedSectors();
+  console.log('  5 setores criados.');
+
+  const categories = await seedCategories();
+  console.log('  Categorias criadas.');
+
+  await seedSlaConfig();
+  console.log('  SLA configs criadas.');
+
+  const users = await seedUsers(roles, sectors);
+  console.log(`  ${users.length} usuários criados.`);
+
+  const tickets = await seedTickets(users, categories, sectors);
+  console.log(`  ${tickets.length} tickets criados.`);
+
+  await seedTicketComments(tickets, users);
+  console.log('  Comentários de tickets criados (~40% dos tickets).');
+
+  const ideas = await seedIdeas(users);
+  console.log(`  ${ideas.length} ideias criadas.`);
+
+  await seedNotifications(users, tickets, ideas);
+  console.log('  30 notificações criadas.');
+
+  console.log('\nSeed concluído com sucesso!');
+  console.log('  admin@helpdesk.com    / Senha123!  (Administrador)');
+  console.log('  gestor1@helpdesk.com  / Senha123!  (Gestor - TI)');
+  console.log('  gestor2@helpdesk.com  / Senha123!  (Gestor - RH)');
+  console.log('  tecnico1@helpdesk.com / Senha123!  (Técnico - TI)');
+  console.log('  usuario1@helpdesk.com / Senha123!  (Usuário Final - TI)');
 }
 
 main()
