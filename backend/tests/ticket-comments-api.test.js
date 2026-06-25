@@ -10,11 +10,14 @@ const createdCategoryIds = [];
 const createdTicketIds = [];
 
 let sector;
+let sectorOther;
 let roleWithInternalNotes;
 let rolePlain;
+let roleNoVisibility;
 let assigneeUser;
 let plainUser;
 let requester;
+let outsiderUser;
 let category;
 let subcategory;
 
@@ -34,13 +37,23 @@ async function createTicket(overrides = {}) {
 
 beforeAll(async () => {
   sector = await prisma.sector.create({ data: { name: 'Sector Teste Ticket Comments' } });
-  createdSectorIds.push(sector.id);
+  sectorOther = await prisma.sector.create({ data: { name: 'Sector Outro Ticket Comments' } });
+  createdSectorIds.push(sector.id, sectorOther.id);
 
   roleWithInternalNotes = await prisma.role.create({
-    data: { name: 'Role Teste Comments Internal', level: 2, permissions: { create: [{ permissionKey: 'view_internal_notes', enabled: true }] } },
+    data: {
+      name: 'Role Teste Comments Internal', level: 2,
+      permissions: { create: [{ permissionKey: 'view_internal_notes', enabled: true }, { permissionKey: 'view_sector_tickets', enabled: true }] },
+    },
   });
-  rolePlain = await prisma.role.create({ data: { name: 'Role Teste Comments Plain', level: 1 } });
-  createdRoleIds.push(roleWithInternalNotes.id, rolePlain.id);
+  rolePlain = await prisma.role.create({
+    data: {
+      name: 'Role Teste Comments Plain', level: 1,
+      permissions: { create: [{ permissionKey: 'view_sector_tickets', enabled: true }] },
+    },
+  });
+  roleNoVisibility = await prisma.role.create({ data: { name: 'Role Teste Comments No Visibility', level: 1 } });
+  createdRoleIds.push(roleWithInternalNotes.id, rolePlain.id, roleNoVisibility.id);
 
   assigneeUser = await prisma.user.create({
     data: { name: 'Assignee Comments', email: 'ticket-comments.assignee@example.com', passwordHash: 'hash', roleId: roleWithInternalNotes.id, sectorId: sector.id },
@@ -51,7 +64,10 @@ beforeAll(async () => {
   requester = await prisma.user.create({
     data: { name: 'Requester Comments', email: 'ticket-comments.requester@example.com', passwordHash: 'hash', roleId: rolePlain.id, sectorId: sector.id },
   });
-  createdUserIds.push(assigneeUser.id, plainUser.id, requester.id);
+  outsiderUser = await prisma.user.create({
+    data: { name: 'Outsider Comments', email: 'ticket-comments.outsider@example.com', passwordHash: 'hash', roleId: roleNoVisibility.id, sectorId: sectorOther.id },
+  });
+  createdUserIds.push(assigneeUser.id, plainUser.id, requester.id, outsiderUser.id);
 
   category = await prisma.category.create({
     data: { name: 'Categoria Teste Ticket Comments', subcategories: { create: [{ name: 'Sub Teste Ticket Comments' }] } },
@@ -138,4 +154,17 @@ test('a comment by someone other than the current assignee does not record first
 
   const updated = await prisma.ticket.findUnique({ where: { id: ticket.id } });
   expect(updated.firstResponseAt).toBeNull();
+});
+
+test('returns 403 when user has no visibility over the ticket', async () => {
+  const ticket = await createTicket({ assignedToId: assigneeUser.id });
+  const token = signAccessToken(outsiderUser.id);
+
+  const response = await request(app)
+    .post(`/api/tickets/${ticket.id}/comments`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({ body: 'Comentário não autorizado' });
+
+  expect(response.status).toBe(403);
+  expect(response.body.error).toBe('Acesso negado.');
 });

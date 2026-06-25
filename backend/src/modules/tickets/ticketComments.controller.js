@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const { ticketVisibilityWhere } = require('../../lib/ticketVisibility');
 
 async function create(req, res) {
   const ticketId = Number(req.params.id);
@@ -14,6 +15,12 @@ async function create(req, res) {
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
   if (!ticket) {
     return res.status(404).json({ error: 'Chamado não encontrado.' });
+  }
+
+  const visibilityWhere = ticketVisibilityWhere(req.user);
+  const visible = await prisma.ticket.findFirst({ where: { id: ticketId, ...visibilityWhere } });
+  if (!visible) {
+    return res.status(403).json({ error: 'Acesso negado.' });
   }
 
   const operations = [
