@@ -42,14 +42,14 @@ O arquivo `backend/prisma/seed.js` é reescrito mantendo a mesma estrutura de fu
 | admin@helpdesk.com | Ana Souza | Administrador | TI |
 | gestor1@helpdesk.com | Beatriz Lima | Gestor | TI |
 | gestor2@helpdesk.com | Renato Alves | Gestor | RH |
-| tecnico1@helpdesk.com | Carla Mendes | Técnico | TI |
-| tecnico2@helpdesk.com | Diego Santos | Técnico | TI |
-| tecnico3@helpdesk.com | Fernanda Costa | Técnico | RH |
-| tecnico4@helpdesk.com | Gustavo Pereira | Técnico | Financeiro |
-| tecnico5@helpdesk.com | Hugo Neves | Técnico | Operações |
-| tecnico6@helpdesk.com | Isabela Moura | Técnico | RH |
-| tecnico7@helpdesk.com | Jonas Barbosa | Técnico | TI |
-| tecnico8@helpdesk.com | Karen Lopes | Técnico | Financeiro |
+| tecnico1@helpdesk.com | Carla Mendes | Técnico/Atendente | TI |
+| tecnico2@helpdesk.com | Diego Santos | Técnico/Atendente | TI |
+| tecnico3@helpdesk.com | Fernanda Costa | Técnico/Atendente | RH |
+| tecnico4@helpdesk.com | Gustavo Pereira | Técnico/Atendente | Financeiro |
+| tecnico5@helpdesk.com | Hugo Neves | Técnico/Atendente | Operações |
+| tecnico6@helpdesk.com | Isabela Moura | Técnico/Atendente | RH |
+| tecnico7@helpdesk.com | Jonas Barbosa | Técnico/Atendente | TI |
+| tecnico8@helpdesk.com | Karen Lopes | Técnico/Atendente | Financeiro |
 | usuario1@helpdesk.com | Helena Rocha | Usuário Final | TI |
 | usuario2@helpdesk.com | Igor Martins | Usuário Final | RH |
 | usuario3@helpdesk.com | Julia Ferreira | Usuário Final | Financeiro |
@@ -199,7 +199,11 @@ const IDEA_DEFINITIONS = [
 ];
 ```
 
-Votos: apenas ideias com status `EM_ANALISE` recebem votos (30-60% dos usuários votam em cada uma).
+**Campo `description` (obrigatório no schema):** gerado automaticamente como `` `Proposta de melhoria: ${def.title}.` `` — o mesmo padrão do seed existente.
+
+Votos: apenas ideias com status `EM_ANALISE` recebem votos (30-60% dos usuários votam em cada uma; o sistema não impõe essa restrição tecnicamente — é convenção de seed).
+
+**IdeaComments:** omitidos intencionalmente no seed rico. O seed existente criava comentários em ideias com status ≠ NOVA, mas o seed novo foca em tickets e notificações para enriquecer o demo. Nenhuma função `seedIdeaComments` deve ser criada.
 
 ## 7. Notificações
 
@@ -224,13 +228,16 @@ backend/prisma/seed.js   (reescrito — mesma interface, novas funções)
 
 ```
 clearDatabase()              — apaga tudo em ordem de FK
-seedRolesAndPermissions()    — 4 roles + permissões (inalterado)
-seedSectors()                — 5 setores (era 3)
+seedRolesAndPermissions()    — 4 roles + permissões (inalterado); retorna { admin, gestor, tecnico, usuarioFinal }
+seedSectors()                — 5 setores (era 3); retorna array ordenado [ti, rh, financeiro, operacoes, juridico]
 seedCategories()             — 4 categorias (inalterado)
 seedSlaConfig()              — 4 urgências (inalterado)
 seedUsers(roles, sectors)    — 20 usuários (era 10)
-seedTickets(...)             — 200 tickets com timeline (era 50)
-seedTicketComments(tickets, users)  — NEW: comentários em ~40% dos tickets
+                               • roles: objeto { admin, gestor, tecnico, usuarioFinal } retornado por seedRolesAndPermissions
+                               • sectors: objeto { ti, rh, financeiro, operacoes, juridico } — NÃO array posicional
+                               • O seed existente passa sectors[0], sectors[1]... — DEVE ser refatorado para acesso por nome
+seedTickets(users, categories, slaConfigs)  — 200 tickets com timeline (era 50)
+seedTicketComments(tickets, users)          — NEW: comentários em ~40% dos tickets
 seedIdeas(users)             — 20 ideias com managerNote (era 9)
 seedNotifications(users, tickets, ideas)  — NEW: ~30 notificações
 main()                       — orquestra na ordem correta
