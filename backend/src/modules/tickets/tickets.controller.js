@@ -109,10 +109,16 @@ async function update(req, res) {
     return res.status(404).json({ error: 'Chamado não encontrado.' });
   }
 
+  const visibilityWhere = ticketVisibilityWhere(req.user);
+  const visible = await prisma.ticket.findFirst({ where: { id, ...visibilityWhere } });
+  if (!visible) {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
   if (assignedToId !== undefined && !req.user.permissions.has('reassign_tickets')) {
     return res.status(403).json({ error: 'Permissão insuficiente para atribuir este chamado.' });
   }
-  if (estimatedCost !== undefined && !req.user.permissions.has('view_financial_reports')) {
+  if (estimatedCost !== undefined && !req.user.permissions.has('update_cost')) {
     return res.status(403).json({ error: 'Permissão insuficiente para definir o custo estimado.' });
   }
 
@@ -139,6 +145,12 @@ async function reopen(req, res) {
   const ticket = await prisma.ticket.findUnique({ where: { id } });
   if (!ticket) {
     return res.status(404).json({ error: 'Chamado não encontrado.' });
+  }
+
+  const visibilityWhere = ticketVisibilityWhere(req.user);
+  const visible = await prisma.ticket.findFirst({ where: { id, ...visibilityWhere } });
+  if (!visible) {
+    return res.status(403).json({ error: 'Acesso negado.' });
   }
 
   const updated = await applyStatusTransition(ticket, 'EM_ANDAMENTO', { id: req.user.id, permissions: req.user.permissions });

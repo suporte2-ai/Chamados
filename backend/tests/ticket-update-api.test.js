@@ -40,12 +40,26 @@ beforeAll(async () => {
   sector = await prisma.sector.create({ data: { name: 'Sector Teste Ticket Update' } });
   createdSectorIds.push(sector.id);
 
-  roleAssignee = await prisma.role.create({ data: { name: 'Role Teste Update Assignee', level: 2 } });
+  roleAssignee = await prisma.role.create({
+    data: { name: 'Role Teste Update Assignee', level: 2, permissions: { create: [{ permissionKey: 'view_sector_tickets', enabled: true }] } },
+  });
   roleReassign = await prisma.role.create({
-    data: { name: 'Role Teste Update Reassign', level: 3, permissions: { create: [{ permissionKey: 'reassign_tickets', enabled: true }] } },
+    data: {
+      name: 'Role Teste Update Reassign', level: 3,
+      permissions: { create: [
+        { permissionKey: 'reassign_tickets', enabled: true },
+        { permissionKey: 'view_all_tickets', enabled: true },
+      ]},
+    },
   });
   roleFinancial = await prisma.role.create({
-    data: { name: 'Role Teste Update Financial', level: 3, permissions: { create: [{ permissionKey: 'view_financial_reports', enabled: true }] } },
+    data: {
+      name: 'Role Teste Update Financial', level: 3,
+      permissions: { create: [
+        { permissionKey: 'update_cost', enabled: true },
+        { permissionKey: 'view_all_tickets', enabled: true },
+      ]},
+    },
   });
   rolePlain = await prisma.role.create({ data: { name: 'Role Teste Update Plain', level: 1 } });
   createdRoleIds.push(roleAssignee.id, roleReassign.id, roleFinancial.id, rolePlain.id);
@@ -121,7 +135,7 @@ test('PATCH allows assignedToId with reassign_tickets', async () => {
   expect(response.body.assignedToId).toBe(assigneeUser.id);
 });
 
-test('PATCH rejects estimatedCost without view_financial_reports, even alongside an allowed field', async () => {
+test('PATCH rejects estimatedCost without update_cost, even alongside an allowed field', async () => {
   const ticket = await createTicket({ status: 'ABERTO', assignedToId: assigneeUser.id });
   const token = signAccessToken(assigneeUser.id);
 
@@ -136,7 +150,7 @@ test('PATCH rejects estimatedCost without view_financial_reports, even alongside
   expect(unchanged.status).toBe('ABERTO');
 });
 
-test('PATCH allows estimatedCost with view_financial_reports', async () => {
+test('PATCH allows estimatedCost with update_cost', async () => {
   const ticket = await createTicket({ status: 'ABERTO' });
   const token = signAccessToken(financialUser.id);
 
@@ -149,10 +163,50 @@ test('PATCH allows estimatedCost with view_financial_reports', async () => {
   expect(Number(response.body.estimatedCost)).toBe(200);
 });
 
+test('PATCH returns 403 when ticket exists but is not visible to the user', async () => {
+  // Create a ticket owned by requester (different sector user is plainUser in same sector,
+  // but plainUser has no view_all_tickets/view_sector_tickets — only requesterId visibility)
+  const otherSector = await prisma.sector.create({ data: { name: 'Sector Other Visibility Test' } });
+  createdSectorIds.push(otherSector.id);
+  const rolePlain2 = await prisma.role.create({ data: { name: 'Role Visibility Plain2', level: 1 } });
+  createdRoleIds.push(rolePlain2.id);
+  const otherUser = await prisma.user.create({
+    data: { name: 'Other', email: 'ticket-update.other-visibility@example.com', passwordHash: 'hash', roleId: rolePlain2.id, sectorId: otherSector.id },
+  });
+  createdUserIds.push(otherUser.id);
+  // Ticket belongs to requester (different user)
+  const ticket = await createTicket({ status: 'ABERTO' });
+  const token = signAccessToken(otherUser.id);
+
+  const response = await request(app)
+    .patch(`/api/tickets/${ticket.id}`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({ status: 'EM_ANDAMENTO' });
+
+  expect(response.status).toBe(403);
+});
+
+test('PATCH returns 404 for non-existent ticket (not 403)', async () => {
+  const token = signAccessToken(plainUser.id);
+
+  const response = await request(app)
+    .patch('/api/tickets/9999999')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ status: 'EM_ANDAMENTO' });
+
+  expect(response.status).toBe(404);
+});
+
 test('POST /api/tickets/:id/reopen reopens a resolved ticket and clears resolution fields', async () => {
   const ticket = await createTicket({ status: 'RESOLVIDO', resolvedAt: new Date(), timeToResolutionMinutes: 60, assignedToId: assigneeUser.id });
   const roleReopen = await prisma.role.create({
-    data: { name: 'Role Teste Update Reopen', level: 2, permissions: { create: [{ permissionKey: 'reopen_tickets', enabled: true }] } },
+    data: {
+      name: 'Role Teste Update Reopen', level: 2,
+      permissions: { create: [
+        { permissionKey: 'reopen_tickets', enabled: true },
+        { permissionKey: 'view_all_tickets', enabled: true },
+      ]},
+    },
   });
   createdRoleIds.push(roleReopen.id);
   const reopenUser = await prisma.user.create({
