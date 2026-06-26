@@ -191,7 +191,7 @@ export default function IdeaDetailPage() {
                   <span className="text-xs font-medium text-gray-700">{c.author?.name ?? 'Usuário'}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
-                    {c.author.id === user?.id && (
+                    {c.author?.id === user?.id && (
                       <button
                         onClick={() => deleteCommentMutation.mutate(c.id)}
                         disabled={deleteCommentMutation.isPending}
