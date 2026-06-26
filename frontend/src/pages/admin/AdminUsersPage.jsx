@@ -9,6 +9,121 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 
+function UserSectors({ userId, sectors, primarySectorId }) {
+  const qc = useQueryClient()
+  const [adding, setAdding] = useState(false)
+  const [newSectorId, setNewSectorId] = useState('')
+  const [newType, setNewType] = useState('member')
+  const [saving, setSaving] = useState(false)
+
+  const { data: sectorData } = useQuery({
+    queryKey: ['user-sectors', userId],
+    queryFn: () => usersApi.listSectors(userId),
+  })
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['user-sectors', userId] })
+
+  const available = sectors.filter(
+    s => s.id !== primarySectorId && !(sectorData?.sectors || []).find(us => us.id === s.id)
+  )
+
+  const handleAdd = async () => {
+    if (!newSectorId) return
+    setSaving(true)
+    try {
+      await usersApi.addSector(userId, { sectorId: Number(newSectorId), type: newType })
+      setAdding(false)
+      setNewSectorId('')
+      setNewType('member')
+      invalidate()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erro ao adicionar setor.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTypeChange = async (sectorId, type) => {
+    try {
+      await usersApi.updateSector(userId, sectorId, { type })
+      invalidate()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erro ao alterar tipo.')
+    }
+  }
+
+  const handleRemove = async (sectorId) => {
+    try {
+      await usersApi.removeSector(userId, sectorId)
+      invalidate()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erro ao remover setor.')
+    }
+  }
+
+  const linked = sectorData?.sectors || []
+
+  return (
+    <div className="pt-1 space-y-1">
+      {linked.map(us => (
+        <div key={us.id} className="flex items-center gap-2 text-xs">
+          <span className="text-gray-600">{us.name}</span>
+          <select
+            value={us.type}
+            onChange={e => handleTypeChange(us.id, e.target.value)}
+            className="border rounded px-1 py-0.5 text-xs"
+          >
+            <option value="member">membro</option>
+            <option value="extra">extra</option>
+          </select>
+          <button
+            onClick={() => handleRemove(us.id)}
+            className="text-red-400 hover:text-red-600 text-xs"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      {adding ? (
+        <div className="flex items-center gap-2 text-xs">
+          <select
+            value={newSectorId}
+            onChange={e => setNewSectorId(e.target.value)}
+            className="border rounded px-1 py-0.5 text-xs"
+          >
+            <option value="">Setor...</option>
+            {available.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <select
+            value={newType}
+            onChange={e => setNewType(e.target.value)}
+            className="border rounded px-1 py-0.5 text-xs"
+          >
+            <option value="member">membro</option>
+            <option value="extra">extra</option>
+          </select>
+          <button
+            onClick={handleAdd}
+            disabled={saving || !newSectorId}
+            className="text-blue-600 hover:underline disabled:opacity-50"
+          >
+            Adicionar
+          </button>
+          <button onClick={() => setAdding(false)} className="text-gray-400 hover:text-gray-600">cancelar</button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="text-blue-500 hover:underline text-xs"
+        >
+          + Adicionar setor
+        </button>
+      )}
+    </div>
+  )
+}
+
 function UserModal({ user, roles, sectors, onClose, onSave }) {
   const isEdit = !!user
   const [form, setForm] = useState({
@@ -130,7 +245,10 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
                   <td className="px-4 py-3 text-gray-500">{u.role?.name || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{u.sector?.name || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    <div className="text-gray-500">{u.sector?.name || '—'} <span className="text-xs text-gray-400">(principal)</span></div>
+                    <UserSectors userId={u.id} sectors={sectors} primarySectorId={u.sectorId} />
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {u.active ? 'Ativo' : 'Inativo'}
