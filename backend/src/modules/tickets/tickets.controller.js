@@ -12,7 +12,12 @@ const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title', 'slaResolutio
 const DEFAULT_PAGE_SIZE = 50;
 
 function serializeTicket(ticket) {
-  return { ...ticket, slaBadge: calculateSlaBadge(ticket) };
+  const { assignee, ...rest } = ticket;
+  const serialized = { ...rest, slaBadge: calculateSlaBadge(ticket) };
+  if (assignee !== undefined) {
+    serialized.assignedTo = assignee;
+  }
+  return serialized;
 }
 
 async function create(req, res) {
@@ -87,7 +92,13 @@ async function list(req, res) {
   const orderBy = SORT_WHITELIST.includes(sortBy) ? { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' } : { createdAt: 'desc' };
 
   const [items, total] = await Promise.all([
-    prisma.ticket.findMany({ where, orderBy, skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.ticket.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { sector: { select: { name: true } } },
+    }),
     prisma.ticket.count({ where }),
   ]);
 
@@ -97,7 +108,14 @@ async function list(req, res) {
 async function detail(req, res) {
   const id = Number(req.params.id);
 
-  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id },
+    include: {
+      requester: { select: { id: true, name: true } },
+      sector: { select: { name: true } },
+      assignee: { select: { id: true, name: true } },
+    },
+  });
   if (!ticket) {
     return res.status(404).json({ error: 'Chamado não encontrado.' });
   }
@@ -115,6 +133,7 @@ async function detail(req, res) {
         ...(req.user.permissions.has('view_internal_notes') ? {} : { isInternal: false }),
       },
       orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, name: true } } },
     }),
     prisma.ticketTimeLog.findMany({
       where: {

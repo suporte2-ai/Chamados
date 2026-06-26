@@ -96,3 +96,65 @@ test('GET /api/tickets?to filters out tickets after the date', async () => {
   expect(res.status).toBe(200);
   expect(res.body.items.every(t => new Date(t.createdAt) <= new Date(past + 'T23:59:59.999Z'))).toBe(true);
 });
+
+test('GET /api/tickets retorna sector.name na listagem', async () => {
+  const res = await request(app)
+    .get('/api/tickets')
+    .set('Authorization', `Bearer ${token}`);
+  expect(res.status).toBe(200);
+  const item = res.body.items.find((t) => t.id === ticket.id);
+  expect(item).toBeDefined();
+  expect(item.sector).toBeDefined();
+  expect(typeof item.sector.name).toBe('string');
+});
+
+test('GET /api/tickets/:id retorna requester.name, sector.name e assignedTo null', async () => {
+  const res = await request(app)
+    .get(`/api/tickets/${ticket.id}`)
+    .set('Authorization', `Bearer ${token}`);
+  expect(res.status).toBe(200);
+  expect(res.body.requester).toBeDefined();
+  expect(typeof res.body.requester.name).toBe('string');
+  expect(res.body.sector).toBeDefined();
+  expect(typeof res.body.sector.name).toBe('string');
+  expect(res.body.assignedTo).toBeNull();
+});
+
+test('GET /api/tickets/:id retorna author.name em cada comentário', async () => {
+  // Criar um comentário via API para garantir que há ao menos um
+  const ids_local = { roles: [], users: [], comments: [] };
+  const commentRole = await prisma.role.create({
+    data: {
+      name: 'Role Ext Comment',
+      level: 1,
+      permissions: { create: [{ permissionKey: 'view_sector_tickets', enabled: true }] },
+    },
+  });
+  ids_local.roles.push(commentRole.id);
+  const commentUser = await prisma.user.create({
+    data: { name: 'User Ext Comment', email: 'ext-comment@example.com', passwordHash: 'h', roleId: commentRole.id, sectorId: ids.sectors[0] },
+  });
+  ids_local.users.push(commentUser.id);
+  const commentToken = signAccessToken(commentUser.id);
+
+  const commentRes = await request(app)
+    .post(`/api/tickets/${ticket.id}/comments`)
+    .set('Authorization', `Bearer ${commentToken}`)
+    .send({ body: 'Teste de enriquecimento', isInternal: false });
+  expect(commentRes.status).toBe(201);
+
+  const res = await request(app)
+    .get(`/api/tickets/${ticket.id}`)
+    .set('Authorization', `Bearer ${token}`);
+  expect(res.status).toBe(200);
+
+  const enrichedComment = res.body.comments.find((c) => c.body === 'Teste de enriquecimento');
+  expect(enrichedComment).toBeDefined();
+  expect(enrichedComment.author).toBeDefined();
+  expect(typeof enrichedComment.author.name).toBe('string');
+
+  // cleanup
+  await prisma.ticketComment.deleteMany({ where: { ticketId: ticket.id } });
+  await prisma.user.deleteMany({ where: { id: { in: ids_local.users } } });
+  await prisma.role.deleteMany({ where: { id: { in: ids_local.roles } } });
+});
