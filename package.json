@@ -1,0 +1,17 @@
+{
+  "name": "chamados",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --prefix-colors \"bgBlue.bold,bgGreen.bold\" --names \"BACKEND,FRONTEND\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "setup": "npm install --prefix backend && npm install --prefix frontend && npm run db:migrate",
+    "db:start": "docker-compose up -d postgres",
+    "db:stop": "docker-compose stop postgres",
+    "db:migrate": "npm run prisma:migrate --prefix backend",
+    "db:seed": "npm run db:seed --prefix backend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
