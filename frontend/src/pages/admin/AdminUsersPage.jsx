@@ -15,6 +15,8 @@ function UserSectors({ userId, sectors, primarySectorId }) {
   const [newSectorId, setNewSectorId] = useState('')
   const [newType, setNewType] = useState('member')
   const [saving, setSaving] = useState(false)
+  const [removingId, setRemovingId] = useState(null)
+  const [changingId, setChangingId] = useState(null)
 
   const { data: sectorData } = useQuery({
     queryKey: ['user-sectors', userId],
@@ -23,7 +25,7 @@ function UserSectors({ userId, sectors, primarySectorId }) {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['user-sectors', userId] })
 
-  const available = sectors.filter(
+  const available = (sectors || []).filter(
     s => s.id !== primarySectorId && !(sectorData?.sectors || []).find(us => us.id === s.id)
   )
 
@@ -44,20 +46,26 @@ function UserSectors({ userId, sectors, primarySectorId }) {
   }
 
   const handleTypeChange = async (sectorId, type) => {
+    setChangingId(sectorId)
     try {
       await usersApi.updateSector(userId, sectorId, { type })
       invalidate()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao alterar tipo.')
+    } finally {
+      setChangingId(null)
     }
   }
 
   const handleRemove = async (sectorId) => {
+    setRemovingId(sectorId)
     try {
       await usersApi.removeSector(userId, sectorId)
       invalidate()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao remover setor.')
+    } finally {
+      setRemovingId(null)
     }
   }
 
@@ -71,14 +79,16 @@ function UserSectors({ userId, sectors, primarySectorId }) {
           <select
             value={us.type}
             onChange={e => handleTypeChange(us.id, e.target.value)}
-            className="border rounded px-1 py-0.5 text-xs"
+            disabled={changingId === us.id}
+            className="border rounded px-1 py-0.5 text-xs disabled:opacity-50"
           >
             <option value="member">membro</option>
             <option value="extra">extra</option>
           </select>
           <button
             onClick={() => handleRemove(us.id)}
-            className="text-red-400 hover:text-red-600 text-xs"
+            disabled={removingId === us.id}
+            className="text-red-400 hover:text-red-600 text-xs disabled:opacity-50"
           >
             ×
           </button>
@@ -115,7 +125,8 @@ function UserSectors({ userId, sectors, primarySectorId }) {
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="text-blue-500 hover:underline text-xs"
+          disabled={!sectorData}
+          className="text-blue-500 hover:underline text-xs disabled:opacity-50"
         >
           + Adicionar setor
         </button>
