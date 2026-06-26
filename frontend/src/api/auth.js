@@ -32,4 +32,16 @@ export const authApi = {
     const { data } = await api.get('/api/auth/me')
     return data
   },
+
+  updateMe(body) {
+    return api.patch('/api/auth/me', body).then(r => r.data)
+  },
+
+  requestEmailChange(newEmail) {
+    return api.post('/api/auth/request-email-change', { newEmail }).then(r => r.data)
+  },
+
+  confirmEmailChange(token) {
+    return api.get(`/api/auth/confirm-email-change/${token}`).then(r => r.data)
+  },
 }
