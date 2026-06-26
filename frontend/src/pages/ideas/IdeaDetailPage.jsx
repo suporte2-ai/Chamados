@@ -188,7 +188,7 @@ export default function IdeaDetailPage() {
             {(idea.comments || []).map((c) => (
               <div key={c.id} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-700">{c.author.name}</span>
+                  <span className="text-xs font-medium text-gray-700">{c.author?.name ?? 'Usuário'}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
                     {c.author.id === user?.id && (
