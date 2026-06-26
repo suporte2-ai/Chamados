@@ -8,7 +8,7 @@ const router = express.Router();
 
 const auth = [asyncHandler(authenticate), requirePermission('manage_categories')];
 
-router.get('/sectors/:id/users', asyncHandler(authenticate), asyncHandler(controller.listSectorUsers));
+router.get('/sectors/:id/users', asyncHandler(authenticate), requirePermission('reassign_tickets'), asyncHandler(controller.listSectorUsers));
 router.get('/sectors', ...auth, asyncHandler(controller.list));
 router.post('/sectors', ...auth, asyncHandler(controller.create));
 

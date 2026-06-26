@@ -11,7 +11,10 @@ let adminRole, techRole;
 let category, subcategory;
 
 beforeAll(async () => {
-  await prisma.userSector.deleteMany();
+  const existingUsers = await prisma.user.findMany({ where: { email: { in: ['admin-us@test.com', 'tech-us@test.com'] } }, select: { id: true } });
+  if (existingUsers.length > 0) {
+    await prisma.userSector.deleteMany({ where: { userId: { in: existingUsers.map(u => u.id) } } });
+  }
   await prisma.user.deleteMany({ where: { email: { in: ['admin-us@test.com', 'tech-us@test.com'] } } });
   await prisma.sector.deleteMany({ where: { name: { in: ['SetorA-US', 'SetorB-US', 'SetorC-US'] } } });
   await prisma.role.deleteMany({ where: { name: { in: ['AdminRole-US', 'TechRole-US'] } } });
@@ -24,7 +27,7 @@ beforeAll(async () => {
     data: {
       name: 'AdminRole-US',
       level: 4,
-      permissions: { create: [{ permissionKey: 'manage_users', enabled: true }] },
+      permissions: { create: [{ permissionKey: 'manage_users', enabled: true }, { permissionKey: 'reassign_tickets', enabled: true }] },
     },
   });
   techRole = await prisma.role.create({
@@ -57,7 +60,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.userSector.deleteMany();
+  await prisma.userSector.deleteMany({ where: { userId: { in: [adminUser.id, techUser.id] } } });
   await prisma.user.deleteMany({ where: { email: { in: ['admin-us@test.com', 'tech-us@test.com'] } } });
   await prisma.sector.deleteMany({ where: { name: { in: ['SetorA-US', 'SetorB-US', 'SetorC-US'] } } });
   await prisma.role.deleteMany({ where: { name: { in: ['AdminRole-US', 'TechRole-US'] } } });
@@ -261,6 +264,30 @@ test('técnico com setor extra NÃO enxerga chamados desse setor (só se atribu�
   await prisma.ticket.delete({ where: { id: ticket.id } });
 });
 
+// ── GET /users?sectorId ───────────────────────────────────────────────────────
+
+test('GET /users?sectorId retorna usuários do setor (principal e vinculados)', async () => {
+  await prisma.userSector.create({ data: { userId: techUser.id, sectorId: sectorB.id, type: 'member' } });
+
+  const res = await request(app)
+    .get(`/api/users?sectorId=${sectorA.id}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  expect(res.status).toBe(200);
+  expect(Array.isArray(res.body)).toBe(true);
+  const ids = res.body.map(u => u.id);
+  expect(ids).toContain(techUser.id); // sectorA is techUser's primary sector
+
+  await prisma.userSector.deleteMany({ where: { userId: techUser.id } });
+});
+
+test('GET /users?sectorId com valor inválido retorna 400', async () => {
+  const res = await request(app)
+    .get('/api/users?sectorId=abc')
+    .set('Authorization', `Bearer ${adminToken}`);
+  expect(res.status).toBe(400);
+});
+
 // ── GET /sectors/:id/users ────────────────────────────────────────────────────
 
 test('GET /sectors/:id/users retorna usuários do setor (principal + member + extra)', async () => {
@@ -270,7 +297,7 @@ test('GET /sectors/:id/users retorna usuários do setor (principal + member + ex
 
   const res = await request(app)
     .get(`/api/sectors/${sectorA.id}/users`)
-    .set('Authorization', `Bearer ${techToken}`);
+    .set('Authorization', `Bearer ${adminToken}`);
 
   expect(res.status).toBe(200);
   const ids = res.body.map(u => u.id);
@@ -279,7 +306,7 @@ test('GET /sectors/:id/users retorna usuários do setor (principal + member + ex
   // também retorna usuários member do sectorB
   const resB = await request(app)
     .get(`/api/sectors/${sectorB.id}/users`)
-    .set('Authorization', `Bearer ${techToken}`);
+    .set('Authorization', `Bearer ${adminToken}`);
   expect(resB.body.map(u => u.id)).toContain(techUser.id);
 
   await prisma.userSector.deleteMany({ where: { userId: techUser.id } });
