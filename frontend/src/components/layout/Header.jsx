@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth'
 const BREADCRUMBS = {
   '/tickets': 'Chamados',
   '/tickets/new': 'Novo Chamado',
+  '/perfil': 'Meu Perfil',
 }
 
 function getBreadcrumb(pathname) {
@@ -26,6 +27,7 @@ function getBreadcrumb(pathname) {
 export default function Header({ onMenuClick }) {
   const location = useLocation()
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const initials = user?.name
     ? user.name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
     : '?'
@@ -51,6 +53,10 @@ export default function Header({ onMenuClick }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <div className="px-3 py-2 text-sm text-gray-500">{user?.email}</div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/perfil')} className="cursor-pointer">
+              Meu perfil
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
               Sair

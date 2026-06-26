@@ -57,6 +57,8 @@ const AdminRoleEditPage = lazy(() => import('@/pages/admin/AdminRoleEditPage'))
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'))
 const AdminSectorsPage  = lazy(() => import('@/pages/admin/AdminSectorsPage'))
 const AdminSlaPage      = lazy(() => import('@/pages/admin/AdminSlaPage'))
+const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
+const ConfirmEmailChangePage = lazy(() => import('@/pages/auth/ConfirmEmailChangePage'))
 
 const F = () => (
   <div className="min-h-screen flex items-center justify-center text-gray-400">Carregando...</div>
@@ -77,6 +79,7 @@ const router = createBrowserRouter([
       { path: '/login', element: <LoginPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password/:token', element: <ResetPasswordPage /> },
+      { path: '/confirmar-email/:token', element: <ConfirmEmailChangePage /> },
       {
         element: (
           <ProtectedRoute>
@@ -99,6 +102,7 @@ const router = createBrowserRouter([
           { path: 'ideas',     element: <Suspense fallback={<F />}><IdeasListPage /></Suspense> },
           { path: 'ideas/new', element: <Suspense fallback={<F />}><IdeaNewPage /></Suspense> },
           { path: 'ideas/:id', element: <Suspense fallback={<F />}><IdeaDetailPage /></Suspense> },
+          { path: 'perfil', element: <Suspense fallback={<F />}><ProfilePage /></Suspense> },
           {
             path: 'admin',
             element: (
