@@ -3,7 +3,13 @@ function ticketVisibilityWhere(user) {
     return {};
   }
   if (user.permissions.has('view_sector_tickets')) {
-    return { OR: [{ sectorId: user.sectorId }, { assignedToId: user.id }] };
+    const visibleSectorIds = [user.sectorId, ...(user.memberSectorIds ?? [])].filter(Boolean);
+    return {
+      OR: [
+        { sectorId: { in: visibleSectorIds } },
+        { assignedToId: user.id },
+      ],
+    };
   }
   return { requesterId: user.id };
 }

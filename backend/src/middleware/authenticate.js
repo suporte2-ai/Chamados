@@ -19,7 +19,10 @@ async function authenticate(req, res, next) {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.sub },
-    include: { role: { include: { permissions: true, fieldVisibilities: true } } },
+    include: {
+      role: { include: { permissions: true, fieldVisibilities: true } },
+      userSectors: { select: { sectorId: true, type: true } },
+    },
   });
 
   if (!user || !user.active) {
@@ -32,6 +35,9 @@ async function authenticate(req, res, next) {
     sectorId: user.sectorId,
     permissions: new Set(getEnabledPermissionKeys(user.role)),
     fieldVisibilities: new Set(getVisibleFieldKeys(user.role)),
+    memberSectorIds: (user.userSectors ?? [])
+      .filter(us => us.type === 'member')
+      .map(us => us.sectorId),
   };
 
   next();
