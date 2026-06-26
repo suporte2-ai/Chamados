@@ -21,7 +21,8 @@ export default function LoginPage() {
     try {
       const data = await authApi.login(email, password)
       setAuth(data)
-      const redirect = params.get('redirect') || '/tickets'
+      const raw = params.get('redirect') || '/tickets'
+      const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/tickets'
       navigate(redirect, { replace: true })
     } catch (err) {
       setError(err.response?.data?.error || 'Credenciais inválidas.')

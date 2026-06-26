@@ -19,10 +19,10 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const TRANSITIONS = {
-  ABERTO: ['EM_ANDAMENTO', 'AGUARDANDO'],
+  ABERTO: ['EM_ANDAMENTO', 'AGUARDANDO', 'RESOLVIDO'],
   EM_ANDAMENTO: ['AGUARDANDO', 'RESOLVIDO'],
   AGUARDANDO: ['EM_ANDAMENTO', 'RESOLVIDO'],
-  RESOLVIDO: ['FECHADO'],
+  RESOLVIDO: ['FECHADO', 'EM_ANDAMENTO'],
   FECHADO: [],
 }
 
@@ -243,15 +243,20 @@ export default function TicketDetailPage() {
                       <p className="text-sm font-medium text-gray-800">{a.fileName}</p>
                       <p className="text-xs text-gray-400">{formatDate(a.createdAt)}</p>
                     </div>
-                    <a
-                      href={ticketsApi.getAttachmentUrl(ticket.id, a.id)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await ticketsApi.downloadAttachment(ticket.id, a.id, a.fileName)
+                        } catch {
+                          toast.error('Erro ao baixar arquivo.')
+                        }
+                      }}
                       className="text-blue-600 hover:underline flex items-center gap-1 text-sm"
                     >
                       <Download className="h-4 w-4" />
                       Baixar
-                    </a>
+                    </button>
                   </div>
                 ))}
               </div>

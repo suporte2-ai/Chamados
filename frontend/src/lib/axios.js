@@ -17,6 +17,15 @@ api.interceptors.request.use((config) => {
 })
 
 let isRefreshing = false
+let failedQueue = []
+
+function processQueue(error, token = null) {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error)
+    else resolve(token)
+  })
+  failedQueue = []
+}
 
 api.interceptors.response.use(
   (response) => response,
@@ -24,19 +33,28 @@ api.interceptors.response.use(
     const original = error.config
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
-      if (!isRefreshing) {
-        isRefreshing = true
-        try {
-          const { data } = await api.post('/api/auth/refresh')
-          setAccessToken(data.accessToken)
-          isRefreshing = false
-          original.headers.Authorization = `Bearer ${data.accessToken}`
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then((token) => {
+          original.headers.Authorization = `Bearer ${token}`
           return api(original)
-        } catch {
-          isRefreshing = false
-          clearAccessToken()
-          window.location.href = '/login'
-        }
+        })
+      }
+      isRefreshing = true
+      try {
+        const { data } = await api.post('/api/auth/refresh')
+        setAccessToken(data.accessToken)
+        processQueue(null, data.accessToken)
+        original.headers.Authorization = `Bearer ${data.accessToken}`
+        return api(original)
+      } catch (err) {
+        processQueue(err)
+        clearAccessToken()
+        window.location.href = '/login'
+        return Promise.reject(err)
+      } finally {
+        isRefreshing = false
       }
     }
     return Promise.reject(error)

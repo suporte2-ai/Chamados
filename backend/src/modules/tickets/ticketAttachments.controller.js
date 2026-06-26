@@ -59,6 +59,13 @@ async function download(req, res) {
     return res.status(404).json({ error: 'Anexo não encontrado.' });
   }
 
+  if (attachment.commentId) {
+    const comment = await prisma.ticketComment.findUnique({ where: { id: attachment.commentId } });
+    if (comment?.isInternal && !req.user.permissions.has('view_internal_notes')) {
+      return res.status(403).json({ error: 'Acesso negado.' });
+    }
+  }
+
   res.download(attachment.filePath, attachment.fileName);
 }
 

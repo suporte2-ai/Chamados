@@ -12,6 +12,15 @@ export const ticketsApi = {
     form.append('file', file)
     return api.post(`/api/tickets/${id}/attachments`, form).then(r => r.data)
   },
-  getAttachmentUrl: (ticketId, attachmentId) =>
-    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/tickets/${ticketId}/attachments/${attachmentId}`,
+  downloadAttachment: async (ticketId, attachmentId, fileName) => {
+    const response = await api.get(`/api/tickets/${ticketId}/attachments/${attachmentId}`, {
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(response.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+  },
 }

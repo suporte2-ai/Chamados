@@ -4,17 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/axios'
 import { ticketsApi } from '@/api/tickets'
-import { formatTicketId } from '@/lib/utils'
+import { formatTicketId, URGENCY_LABELS } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
-const URGENCIES = [
-  { value: 'CRITICO', label: 'Crítico' },
-  { value: 'ALTO', label: 'Alto' },
-  { value: 'MEDIO', label: 'Médio' },
-  { value: 'BAIXO', label: 'Baixo' },
-]
 
 export default function TicketNewPage() {
   const navigate = useNavigate()
@@ -136,7 +130,7 @@ export default function TicketNewPage() {
             className="border rounded-md px-3 py-2 text-sm w-full max-w-xs"
           >
             <option value="">Selecione...</option>
-            {URGENCIES.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+            {Object.entries(URGENCY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
           {errors.urgency && <p className="text-sm text-red-600 mt-1">{errors.urgency}</p>}
         </div>

@@ -65,9 +65,14 @@ async function list(req, res) {
   if (sectorId) where.sectorId = Number(sectorId);
   if (from || to) {
     where.createdAt = {};
-    if (from) where.createdAt.gte = new Date(from);
+    if (from) {
+      const fromDate = new Date(from);
+      if (isNaN(fromDate.getTime())) return res.status(400).json({ error: 'Parâmetro from inválido.' });
+      where.createdAt.gte = fromDate;
+    }
     if (to) {
       const toDate = new Date(to);
+      if (isNaN(toDate.getTime())) return res.status(400).json({ error: 'Parâmetro to inválido.' });
       toDate.setUTCHours(23, 59, 59, 999);
       where.createdAt.lte = toDate;
     }
@@ -112,7 +117,12 @@ async function detail(req, res) {
       orderBy: { createdAt: 'asc' },
     }),
     prisma.ticketTimeLog.findMany({
-      where: { ticketId: id },
+      where: {
+        ticketId: id,
+        ...(req.user.permissions.has('view_internal_notes')
+          ? {}
+          : { eventType: { notIn: ['PAUSE_START', 'PAUSE_END'] } }),
+      },
       orderBy: { occurredAt: 'asc' },
     }),
     prisma.ticketAttachment.findMany({

@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ticketsApi } from '@/api/tickets'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDate, formatTicketId, STATUS_COLORS, STATUS_LABELS, URGENCY_COLORS, URGENCY_LABELS, SLA_BADGE_COLORS, cn } from '@/lib/utils'
@@ -31,9 +31,11 @@ export default function TicketListPage() {
   const { fieldVisible } = useAuth()
   const { get, set, page, setPage, params } = useFilters()
   const [search, setSearch] = useState(get('search'))
+  const setRef = useRef(set)
+  setRef.current = set
 
   useEffect(() => {
-    const t = setTimeout(() => set('search', search), 400)
+    const t = setTimeout(() => setRef.current('search', search), 400)
     return () => clearTimeout(t)
   }, [search])
 
