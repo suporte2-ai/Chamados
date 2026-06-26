@@ -3,13 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { ticketsApi } from '@/api/tickets'
 import { useAuth } from '@/hooks/useAuth'
-import { formatDate, formatTicketId, STATUS_COLORS, STATUS_LABELS, URGENCY_COLORS, URGENCY_LABELS, SLA_BADGE_COLORS, cn } from '@/lib/utils'
+import { formatDate, formatTicketId, STATUS_COLORS, STATUS_LABELS, URGENCY_COLORS, URGENCY_LABELS, SLA_BADGE_COLORS, SLA_BADGE_LABELS, cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO', 'RESOLVIDO', 'FECHADO']
-const URGENCIES = ['CRITICO', 'ALTO', 'MEDIO', 'BAIXO']
 
 function useFilters() {
   const [params, setParams] = useSearchParams()
@@ -82,7 +80,7 @@ export default function TicketListPage() {
           className="border rounded-md px-3 py-2 text-sm w-full"
         >
           <option value="">Todos os status</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+          {Object.entries(STATUS_LABELS).map(([s, label]) => <option key={s} value={s}>{label}</option>)}
         </select>
         <select
           value={get('urgency')}
@@ -90,7 +88,7 @@ export default function TicketListPage() {
           className="border rounded-md px-3 py-2 text-sm w-full"
         >
           <option value="">Todas as urgências</option>
-          {URGENCIES.map((u) => <option key={u} value={u}>{URGENCY_LABELS[u]}</option>)}
+          {Object.entries(URGENCY_LABELS).map(([u, label]) => <option key={u} value={u}>{label}</option>)}
         </select>
         <div className="flex gap-2 col-span-2 md:col-span-1">
           <input
@@ -159,7 +157,7 @@ export default function TicketListPage() {
                         <td className="px-4 py-3 hidden xl:table-cell">
                           {t.slaBadge ? (
                             <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
-                              {t.slaBadge.charAt(0).toUpperCase() + t.slaBadge.slice(1)}
+                              {SLA_BADGE_LABELS[t.slaBadge] ?? t.slaBadge}
                             </span>
                           ) : '—'}
                         </td>

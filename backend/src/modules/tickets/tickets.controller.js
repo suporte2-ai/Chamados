@@ -126,7 +126,12 @@ async function detail(req, res) {
       orderBy: { occurredAt: 'asc' },
     }),
     prisma.ticketAttachment.findMany({
-      where: { ticketId: id },
+      where: {
+        ticketId: id,
+        ...(req.user.permissions.has('view_internal_notes')
+          ? {}
+          : { OR: [{ commentId: null }, { comment: { isInternal: false } }] }),
+      },
       orderBy: { createdAt: 'asc' },
       select: { id: true, fileName: true, createdAt: true, uploadedById: true, commentId: true },
     }),

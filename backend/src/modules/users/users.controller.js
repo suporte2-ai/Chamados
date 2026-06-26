@@ -15,9 +15,11 @@ const USER_SAFE_SELECT = {
 };
 
 async function list(req, res) {
+  const take = req.query.take ? Math.min(Number(req.query.take), 500) : 500;
   const users = await prisma.user.findMany({
     select: USER_SAFE_SELECT,
-    orderBy: { id: 'asc' },
+    orderBy: { name: 'asc' },
+    take,
   });
   res.json(users);
 }

@@ -61,7 +61,7 @@ async function download(req, res) {
 
   if (attachment.commentId) {
     const comment = await prisma.ticketComment.findUnique({ where: { id: attachment.commentId } });
-    if (comment?.isInternal && !req.user.permissions.has('view_internal_notes')) {
+    if (!comment || (comment.isInternal && !req.user.permissions.has('view_internal_notes'))) {
       return res.status(403).json({ error: 'Acesso negado.' });
     }
   }

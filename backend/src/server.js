@@ -16,6 +16,16 @@ const notificationsRoutes = require('./modules/notifications/notifications.route
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+if (process.env.NODE_ENV === 'production') {
+  const origin = process.env.CORS_ORIGIN;
+  if (!origin) {
+    console.warn('[WARN] CORS_ORIGIN is not set in production — only http://localhost:5173 will be allowed.');
+  } else if (origin === '*') {
+    throw new Error('CORS_ORIGIN=* with credentials:true is not allowed in production.');
+  }
+}
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true,

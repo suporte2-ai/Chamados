@@ -10,7 +10,7 @@ import {
   formatDate, formatTicketId, timeAgo,
   STATUS_COLORS, STATUS_LABELS,
   URGENCY_COLORS, URGENCY_LABELS,
-  SLA_BADGE_COLORS,
+  SLA_BADGE_COLORS, SLA_BADGE_LABELS,
   cn,
 } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -139,12 +139,14 @@ export default function TicketDetailPage() {
   }
 
   const transitions = TRANSITIONS[ticket.status] || []
+  const canManage = user?.id === ticket.assignedToId || permissions.has('reassign_tickets')
   const canReopen = permissions.has('reopen_tickets') && ticket.status === 'RESOLVIDO'
   const canClose = permissions.has('close_tickets') && ticket.status !== 'FECHADO'
 
   const allowedTransitions = transitions.filter(s => {
     if (s === 'FECHADO') return canClose
-    return true
+    if (s === 'EM_ANDAMENTO' && ticket.status === 'RESOLVIDO') return canReopen
+    return canManage
   })
 
   return (
@@ -165,7 +167,7 @@ export default function TicketDetailPage() {
             </span>
             {ticket.slaBadge && (
               <span className={cn('px-2.5 py-1 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[ticket.slaBadge])}>
-                SLA: {ticket.slaBadge.charAt(0).toUpperCase() + ticket.slaBadge.slice(1)}
+                SLA: {SLA_BADGE_LABELS[ticket.slaBadge] ?? ticket.slaBadge}
               </span>
             )}
           </div>

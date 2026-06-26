@@ -37,6 +37,12 @@ export const SLA_BADGE_COLORS = {
   verde: 'bg-green-100 text-green-700 border-green-200',
 }
 
+export const SLA_BADGE_LABELS = {
+  vermelho: 'Vermelho',
+  amarelo: 'Amarelo',
+  verde: 'Verde',
+}
+
 export const STATUS_COLORS = {
   ABERTO: 'bg-blue-100 text-blue-700',
   EM_ANDAMENTO: 'bg-purple-100 text-purple-700',
