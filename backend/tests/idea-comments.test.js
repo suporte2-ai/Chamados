@@ -138,3 +138,31 @@ test('DELETE /ideas/:id/comments/:cid comentário inexistente retorna 404', asyn
     .set('Authorization', `Bearer ${authorToken}`);
   expect(res.status).toBe(404);
 });
+
+test('DELETE /ideas/:id/comments/:cid com ideaId errado retorna 404', async () => {
+  // Create a second idea to use as the wrong parent
+  const wrongIdea = await prisma.idea.create({
+    data: {
+      title: 'Ideia errada',
+      description: 'Desc',
+      areaImpacted: 'TI',
+      expectedBenefit: 'Test',
+      authorId: ids.users[0],
+      status: 'EM_ANALISE',
+    },
+  });
+  ids.ideas.push(wrongIdea.id);
+
+  // Create a comment on the correct idea
+  const createRes = await request(app)
+    .post(`/api/ideas/${ideaId}/comments`)
+    .set('Authorization', `Bearer ${authorToken}`)
+    .send({ body: 'Comentário para cross-val' });
+  ids.comments.push(createRes.body.id);
+
+  // Try to delete it via the wrong idea's URL
+  const res = await request(app)
+    .delete(`/api/ideas/${wrongIdea.id}/comments/${createRes.body.id}`)
+    .set('Authorization', `Bearer ${authorToken}`);
+  expect(res.status).toBe(404);
+});

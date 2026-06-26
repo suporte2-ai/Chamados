@@ -201,6 +201,11 @@ async function addComment(req, res) {
 }
 
 async function deleteComment(req, res) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'id deve ser um número inteiro positivo.' });
+  }
+
   const cid = Number(req.params.cid);
   if (!Number.isInteger(cid) || cid <= 0) {
     return res.status(400).json({ error: 'cid deve ser um número inteiro positivo.' });
@@ -208,6 +213,8 @@ async function deleteComment(req, res) {
 
   const comment = await prisma.ideaComment.findUnique({ where: { id: cid } });
   if (!comment) return res.status(404).json({ error: 'Comentário não encontrado.' });
+
+  if (comment.ideaId !== id) return res.status(404).json({ error: 'Comentário não encontrado.' });
 
   const hasManageIdeas = req.user.permissions.has('manage_ideas');
   if (comment.authorId !== req.user.id && !hasManageIdeas) {
