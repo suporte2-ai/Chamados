@@ -83,6 +83,7 @@ model User {
   ideaComments IdeaComment[]
 
   notifications Notification[]
+  emailChangeTokens EmailChangeToken[]
 
   @@map("users")
 }
@@ -310,4 +311,18 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model EmailChangeToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newEmail  String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  reason    String?
+  createdAt DateTime  @default(now())
+
+  @@map("email_change_tokens")
 }
