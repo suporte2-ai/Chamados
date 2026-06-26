@@ -192,6 +192,11 @@ async function addComment(req, res) {
   const idea = await prisma.idea.findUnique({ where: { id } });
   if (!idea) return res.status(404).json({ error: 'Ideia não encontrada.' });
 
+  const hasManageIdeas = req.user.permissions.has('manage_ideas');
+  if (idea.status === 'NOVA' && idea.authorId !== req.user.id && !hasManageIdeas) {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
   const comment = await prisma.ideaComment.create({
     data: { ideaId: id, authorId: req.user.id, body: body.trim() },
     include: { author: { select: { id: true, name: true } } },

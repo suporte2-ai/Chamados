@@ -166,3 +166,23 @@ test('DELETE /ideas/:id/comments/:cid com ideaId errado retorna 404', async () =
     .set('Authorization', `Bearer ${authorToken}`);
   expect(res.status).toBe(404);
 });
+
+test('POST /ideas/:id/comments em ideia NOVA de outro usuário retorna 403', async () => {
+  const novaIdea = await prisma.idea.create({
+    data: {
+      title: 'Ideia NOVA restrita',
+      description: 'Desc',
+      areaImpacted: 'TI',
+      expectedBenefit: 'Test',
+      authorId: ids.users[0],
+      status: 'NOVA',
+    },
+  });
+  ids.ideas.push(novaIdea.id);
+
+  const res = await request(app)
+    .post(`/api/ideas/${novaIdea.id}/comments`)
+    .set('Authorization', `Bearer ${otherToken}`)
+    .send({ body: 'Não deveria conseguir comentar' });
+  expect(res.status).toBe(403);
+});
