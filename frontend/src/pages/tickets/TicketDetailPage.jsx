@@ -190,6 +190,8 @@ export default function TicketDetailPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     {c.isInternal && <Lock className="h-3 w-3 text-yellow-600" />}
+                    <span className="text-xs font-medium text-gray-700">{c.author?.name ?? 'Usuário'}</span>
+                    <span className="text-xs text-gray-400">·</span>
                     <span className="text-xs text-gray-500">{formatDate(c.createdAt)}</span>
                     {c.isInternal && <span className="text-xs text-yellow-700 font-medium">Nota interna</span>}
                   </div>
@@ -346,14 +348,14 @@ export default function TicketDetailPage() {
                   {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               ) : (
-                <p className="text-gray-700">{ticket.assignedToId ? `Usuário #${ticket.assignedToId}` : '— Não atribuído —'}</p>
+                <p className="text-gray-700">{ticket.assignedTo?.name ?? '— Não atribuído —'}</p>
               )}
             </div>
 
             {/* Campos de leitura */}
             {[
-              { label: 'SOLICITANTE', value: `Usuário #${ticket.requesterId}` },
-              { label: 'SETOR', value: `Setor #${ticket.sectorId}` },
+              { label: 'SOLICITANTE', value: ticket.requester?.name ?? '—' },
+              { label: 'SETOR', value: ticket.sector?.name ?? '—' },
               { label: 'URGÊNCIA', value: URGENCY_LABELS[ticket.urgency] },
               { label: 'CRIADO EM', value: formatDate(ticket.createdAt) },
               { label: 'RESOLVIDO EM', value: ticket.resolvedAt ? formatDate(ticket.resolvedAt) : '—' },

@@ -151,7 +151,7 @@ export default function TicketListPage() {
                           {URGENCY_LABELS[t.urgency]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{t.sectorId}</td>
+                      <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{t.sector?.name ?? '—'}</td>
                       {showAssignedTo && <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{t.assignedToId || '—'}</td>}
                       {showSla && (
                         <td className="px-4 py-3 hidden xl:table-cell">
