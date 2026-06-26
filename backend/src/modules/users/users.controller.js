@@ -15,13 +15,26 @@ const USER_SAFE_SELECT = {
 };
 
 async function list(req, res) {
-  const take = req.query.take ? Math.min(Number(req.query.take), 500) : 500;
+  const { sectorId, take: takeParam } = req.query
+  const take = takeParam ? Math.min(Number(takeParam), 500) : 500
+  const where = {}
+
+  if (sectorId) {
+    const sid = Number(sectorId)
+    if (isNaN(sid)) return res.status(400).json({ error: 'sectorId inválido.' })
+    where.OR = [
+      { sectorId: sid },
+      { userSectors: { some: { sectorId: sid } } },
+    ]
+  }
+
   const users = await prisma.user.findMany({
+    where,
     select: USER_SAFE_SELECT,
     orderBy: { name: 'asc' },
     take,
-  });
-  res.json(users);
+  })
+  res.json(users)
 }
 
 async function create(req, res) {
@@ -75,4 +88,93 @@ async function update(req, res) {
   res.json(updated);
 }
 
-module.exports = { list, create, update };
+async function listUserSectors(req, res) {
+  const id = Number(req.params.id)
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      sector: { select: { id: true, name: true } },
+      userSectors: { include: { sector: { select: { id: true, name: true } } } },
+    },
+  })
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' })
+  res.json({
+    primary: user.sector,
+    sectors: user.userSectors.map(us => ({ id: us.sector.id, name: us.sector.name, type: us.type })),
+  })
+}
+
+async function addUserSector(req, res) {
+  const id = Number(req.params.id)
+  const { sectorId, type } = req.body
+
+  if (type !== 'member' && type !== 'extra') {
+    return res.status(400).json({ error: 'type inválido.' })
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } })
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' })
+
+  const sector = await prisma.sector.findUnique({ where: { id: Number(sectorId) } })
+  if (!sector) return res.status(422).json({ error: 'Setor não encontrado.' })
+
+  if (user.sectorId === Number(sectorId)) {
+    return res.status(409).json({ error: 'Este já é o setor principal do usuário.' })
+  }
+
+  const existing = await prisma.userSector.findUnique({
+    where: { userId_sectorId: { userId: id, sectorId: Number(sectorId) } },
+  })
+  if (existing) return res.status(409).json({ error: 'Usuário já pertence a este setor.' })
+
+  const userSector = await prisma.userSector.create({
+    data: { userId: id, sectorId: Number(sectorId), type },
+    include: { sector: { select: { id: true, name: true } } },
+  })
+  res.status(201).json(userSector)
+}
+
+async function updateUserSector(req, res) {
+  const id = Number(req.params.id)
+  const sid = Number(req.params.sid)
+  const { type } = req.body
+
+  if (type !== 'member' && type !== 'extra') {
+    return res.status(400).json({ error: 'type inválido.' })
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } })
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' })
+
+  const link = await prisma.userSector.findUnique({
+    where: { userId_sectorId: { userId: id, sectorId: sid } },
+  })
+  if (!link) return res.status(404).json({ error: 'Setor não encontrado para este usuário.' })
+
+  const updated = await prisma.userSector.update({
+    where: { userId_sectorId: { userId: id, sectorId: sid } },
+    data: { type },
+    include: { sector: { select: { id: true, name: true } } },
+  })
+  res.json(updated)
+}
+
+async function removeUserSector(req, res) {
+  const id = Number(req.params.id)
+  const sid = Number(req.params.sid)
+
+  const user = await prisma.user.findUnique({ where: { id } })
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' })
+
+  const link = await prisma.userSector.findUnique({
+    where: { userId_sectorId: { userId: id, sectorId: sid } },
+  })
+  if (!link) return res.status(404).json({ error: 'Setor não encontrado para este usuário.' })
+
+  await prisma.userSector.delete({
+    where: { userId_sectorId: { userId: id, sectorId: sid } },
+  })
+  res.status(204).send()
+}
+
+module.exports = { list, create, update, listUserSectors, addUserSector, updateUserSector, removeUserSector };

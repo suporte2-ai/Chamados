@@ -12,4 +12,9 @@ router.get('/', asyncHandler(controller.list));
 router.post('/', asyncHandler(controller.create));
 router.patch('/:id', asyncHandler(controller.update));
 
+router.get('/:id/sectors',         asyncHandler(controller.listUserSectors));
+router.post('/:id/sectors',        asyncHandler(controller.addUserSector));
+router.patch('/:id/sectors/:sid',  asyncHandler(controller.updateUserSector));
+router.delete('/:id/sectors/:sid', asyncHandler(controller.removeUserSector));
+
 module.exports = router;

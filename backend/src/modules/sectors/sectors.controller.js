@@ -20,4 +20,20 @@ async function create(req, res) {
   res.status(201).json(sector);
 }
 
-module.exports = { list, create };
+async function listSectorUsers(req, res) {
+  const id = Number(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ error: 'id inválido.' })
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { sectorId: id },
+        { userSectors: { some: { sectorId: id } } },
+      ],
+    },
+    select: { id: true, name: true, email: true, sectorId: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json(users)
+}
+
+module.exports = { list, create, listSectorUsers };
