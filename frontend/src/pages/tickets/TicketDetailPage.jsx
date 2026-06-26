@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ChevronDown, ChevronUp, Lock, Paperclip, Download } from 'lucide-react'
 import { ticketsApi } from '@/api/tickets'
-import api from '@/lib/axios'
+import { sectorsApi } from '@/api/sectors'
 import { useAuth } from '@/hooks/useAuth'
 import {
   formatDate, formatTicketId, timeAgo,
@@ -54,10 +54,11 @@ export default function TicketDetailPage() {
     queryFn: () => ticketsApi.get(id),
   })
 
+  const ticketSectorId = ticket?.sector?.id ?? ticket?.sectorId
   const { data: users = [] } = useQuery({
-    queryKey: ['users-all'],
-    queryFn: () => api.get('/api/users').then(r => r.data).catch(() => []),
-    enabled: permissions.has('reassign_tickets'),
+    queryKey: ['sector-users', ticketSectorId],
+    queryFn: () => sectorsApi.listUsers(ticketSectorId).catch(() => []),
+    enabled: permissions.has('reassign_tickets') && !!ticketSectorId,
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['tickets', id] })
