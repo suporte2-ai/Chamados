@@ -42,10 +42,11 @@ include: {
 }
 ```
 
-`ticketComments.controller.js` — ao buscar comentários em `detail`, adicionar:
+Ainda em **`tickets.controller.js`**, função `detail` — no `prisma.ticketComment.findMany` (linha ~112), adicionar:
 ```js
 include: { author: { select: { id: true, name: true } } }
 ```
+> Atenção: este `findMany` está em `tickets.controller.js::detail`, **não** em `ticketComments.controller.js` (que trata apenas de criação de comentários).
 
 A função `serializeTicket` continua sem alterações — apenas passa adiante os campos incluídos pelo Prisma junto ao spread. Os campos antigos (`requesterId`, `sectorId`, `assignedToId`) permanecem na resposta (Prisma os retorna por padrão).
 
@@ -84,7 +85,7 @@ DELETE /api/ideas/:id/comments/:cid  — authenticated (só autor)
 `deleteComment(req, res)`:
 - Busca o comentário pelo `id` (`req.params.cid`)
 - Se não existir → 404
-- Se `comment.authorId !== req.user.id` → 403 ("Você não pode excluir este comentário.")
+- Se `comment.authorId !== req.user.id` **e** `req.user.permissions` não incluir `manage_ideas` → 403 ("Você não pode excluir este comentário.")
 - `prisma.ideaComment.delete({ where: { id } })`
 - HTTP 204
 
@@ -151,20 +152,23 @@ model EmailChangeToken {
   token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
+  reason    String?   // 'used' | 'superseded' — null enquanto válido
   createdAt DateTime  @default(now())
 }
 ```
 
 ### 5.2 Backend — novos endpoints
 
-Todos em `auth.routes.js`, protegidos por `authenticate`:
+Todos em `auth.routes.js`. **Importante:** `PATCH /me` e `POST /request-email-change` exigem `authenticate`. `GET /confirm-email-change/:token` é **público** (sem middleware de autenticação) — o usuário acessa via link de e-mail, possivelmente em outro dispositivo sem sessão ativa:
 
 **`PATCH /api/auth/me`**
 
-Dois casos de uso independentes (o cliente pode enviar um ou os dois):
+Dois casos de uso que o cliente pode combinar em uma mesma requisição:
 
 - Atualizar nome: `{ name: string }` — valida non-empty, atualiza `user.name`
 - Trocar senha: `{ currentPassword, newPassword }` — valida que `currentPassword` bate com o hash atual (bcrypt.compare), faz hash do `newPassword`, atualiza `user.passwordHash`
+
+**Comportamento quando ambos chegam juntos:** validar a senha **antes** de persistir qualquer alteração. Se a senha atual estiver errada, retornar 400 sem salvar o nome. Se a senha for válida, salvar nome e senha em uma única chamada `prisma.user.update` (atômica).
 - Retorna o usuário atualizado: `{ id, name, email, roleId, sectorId }`
 
 **`POST /api/auth/request-email-change`**
@@ -172,7 +176,7 @@ Dois casos de uso independentes (o cliente pode enviar um ou os dois):
 - Body: `{ newEmail: string }`
 - Valida formato de e-mail
 - Verifica que `newEmail` não está em uso por outro usuário (`user.email` case-insensitive)
-- Invalida tokens anteriores do mesmo usuário (soft: apenas `usedAt = now()`)
+- Invalida tokens anteriores do mesmo usuário: `updateMany({ where: { userId, usedAt: null }, data: { usedAt: now(), reason: 'superseded' } })`
 - Gera token UUID, cria `EmailChangeToken` com `expiresAt = now() + 1h`
 - Envia e-mail com link: `${FRONTEND_URL}/confirmar-email/${token}`
 - Se SMTP não configurado: loga link no console (mesmo comportamento do reset de senha)
@@ -181,9 +185,20 @@ Dois casos de uso independentes (o cliente pode enviar um ou os dois):
 **`GET /api/auth/confirm-email-change/:token`**
 
 - Busca `EmailChangeToken` pelo token
-- Se não existe / `usedAt` preenchido / `expiresAt < now()` → 400 com mensagem adequada
-- Verifica que `newEmail` ainda não está em uso (outro usuário pode ter criado o e-mail entre a solicitação e a confirmação)
-- `user.email = token.newEmail`, `token.usedAt = now()`
+- Se não existe → 400 "Link inválido."
+- Se `expiresAt < now()` → 400 "Link expirado."
+- Se `usedAt` preenchido: verificar `reason`. Tokens invalidados por nova solicitação devem carregar `reason: 'superseded'` → 400 "Este link foi substituído por uma solicitação mais recente." Tokens realmente utilizados → 400 "Link já utilizado."
+- Verifica que `newEmail` ainda não está em uso (outro usuário pode ter criado o e-mail entre a solicitação e a confirmação) → 409 se já em uso.
+- Marcar o token como utilizado e atualizar o e-mail atomicamente via `prisma.$transaction`:
+  ```js
+  const updated = await prisma.emailChangeToken.updateMany({
+    where: { id: emailToken.id, usedAt: null },
+    data: { usedAt: now(), reason: 'used' },
+  })
+  if (updated.count === 0) return res.status(400).json({ error: 'Link já utilizado.' })
+  await prisma.user.update({ where: { id: emailToken.userId }, data: { email: emailToken.newEmail } })
+  ```
+  O `updateMany` com `usedAt: null` garante que duas requisições concorrentes não processem o mesmo token duas vezes.
 - Retorna `{ message: 'E-mail atualizado com sucesso.' }`
 
 ### 5.3 Frontend — novas páginas e rotas
@@ -241,8 +256,10 @@ Criar `backend/tests/profile-api.test.js`:
 - `POST /api/auth/request-email-change` com e-mail já em uso → 409
 - `POST /api/auth/request-email-change` com e-mail novo → 200, token criado no banco
 - `GET /api/auth/confirm-email-change/:token` válido → 200, e-mail atualizado
-- `GET /api/auth/confirm-email-change/:token` expirado → 400
-- `GET /api/auth/confirm-email-change/:token` já usado → 400
+- `GET /api/auth/confirm-email-change/:token` expirado → 400 "Link expirado."
+- `GET /api/auth/confirm-email-change/:token` já utilizado (reason: 'used') → 400 "Link já utilizado."
+- `GET /api/auth/confirm-email-change/:token` substituído (reason: 'superseded') → 400 "Link substituído por solicitação mais recente."
+- `PATCH /api/auth/me` com nome + senha incorreta → 400 sem salvar o nome (atomicidade)
 
 ## 6. Arquivos criados e modificados
 
@@ -252,8 +269,7 @@ Criar `backend/tests/profile-api.test.js`:
 |---|---|
 | `backend/prisma/schema.prisma` | Adicionar model `EmailChangeToken` |
 | `backend/prisma/migrations/...` | Migration gerada via `npx prisma migrate dev` |
-| `backend/src/modules/tickets/tickets.controller.js` | Adicionar `include` em `list` e `detail` |
-| `backend/src/modules/tickets/ticketComments.controller.js` | Adicionar `include: { author }` na busca de comentários em `detail` |
+| `backend/src/modules/tickets/tickets.controller.js` | Adicionar `include` em `list` e `detail`; adicionar `include: { author }` no `prisma.ticketComment.findMany` dentro de `detail` |
 | `backend/src/modules/ideas/ideas.controller.js` | Adicionar `addComment`, `deleteComment`, enriquecer `detail` com `comments` |
 | `backend/src/modules/ideas/ideas.routes.js` | Registrar POST e DELETE de comentários |
 | `backend/src/modules/auth/auth.controller.js` | Adicionar `updateMe`, `requestEmailChange`, `confirmEmailChange` |
