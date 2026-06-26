@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/auth'
+import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 
 export default function ConfirmEmailChangePage() {
@@ -11,9 +12,15 @@ export default function ConfirmEmailChangePage() {
 
   useEffect(() => {
     authApi.confirmEmailChange(token)
-      .then((data) => {
+      .then(async (data) => {
         setMessage(data.message)
         setState('success')
+        try {
+          const profile = await authApi.me()
+          useAuthStore.getState().setAuth(profile)
+        } catch {
+          // ignore — token still works
+        }
       })
       .catch((err) => {
         setMessage(err.response?.data?.error || 'Link inválido ou expirado.')

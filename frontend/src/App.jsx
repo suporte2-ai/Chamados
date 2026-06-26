@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import LoginPage from '@/pages/auth/LoginPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
+import ConfirmEmailChangePage from '@/pages/auth/ConfirmEmailChangePage'
 
 function RootLayout() {
   const [ready, setReady] = useState(false)
@@ -58,7 +59,6 @@ const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage
 const AdminSectorsPage  = lazy(() => import('@/pages/admin/AdminSectorsPage'))
 const AdminSlaPage      = lazy(() => import('@/pages/admin/AdminSlaPage'))
 const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
-const ConfirmEmailChangePage = lazy(() => import('@/pages/auth/ConfirmEmailChangePage'))
 
 const F = () => (
   <div className="min-h-screen flex items-center justify-center text-gray-400">Carregando...</div>

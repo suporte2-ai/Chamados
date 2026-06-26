@@ -254,26 +254,30 @@ async function requestEmailChange(req, res) {
   }
 
   const existing = await prisma.user.findFirst({
-    where: { email: { equals: newEmail, mode: 'insensitive' } },
+    where: {
+      email: { equals: newEmail, mode: 'insensitive' },
+      id: { not: req.user.id },
+    },
   });
   if (existing) {
     return res.status(409).json({ error: 'Este e-mail já está em uso.' });
   }
 
-  await prisma.emailChangeToken.updateMany({
-    where: { userId: req.user.id, usedAt: null },
-    data: { usedAt: new Date(), reason: 'superseded' },
-  });
-
   const token = crypto.randomUUID();
-  await prisma.emailChangeToken.create({
-    data: {
-      userId: req.user.id,
-      newEmail,
-      token,
-      expiresAt: new Date(Date.now() + 3600000),
-    },
-  });
+  await prisma.$transaction([
+    prisma.emailChangeToken.updateMany({
+      where: { userId: req.user.id, usedAt: null },
+      data: { usedAt: new Date(), reason: 'superseded' },
+    }),
+    prisma.emailChangeToken.create({
+      data: {
+        userId: req.user.id,
+        newEmail,
+        token,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    }),
+  ]);
 
   const confirmLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/confirmar-email/${token}`;
   console.log(`Link de confirmação de e-mail para ${newEmail}: ${confirmLink}`);

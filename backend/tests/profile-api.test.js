@@ -8,6 +8,7 @@ const ids = { sectors: [], roles: [], users: [], tokens: [] };
 let userToken;
 let userId;
 const PLAIN_PASSWORD = 'SenhaProfile1!';
+let otherUserEmail;
 
 beforeAll(async () => {
   const sector = await prisma.sector.create({ data: { name: 'Setor Profile Test' } });
@@ -29,6 +30,19 @@ beforeAll(async () => {
   ids.users.push(user.id);
   userId = user.id;
   userToken = signAccessToken(user.id);
+
+  // Segundo usuário — usado para testar e-mail já em uso por outra pessoa
+  otherUserEmail = 'profile-test-other@example.com';
+  const otherUser = await prisma.user.create({
+    data: {
+      name: 'Other User Profile Test',
+      email: otherUserEmail,
+      passwordHash,
+      roleId: role.id,
+      sectorId: sector.id,
+    },
+  });
+  ids.users.push(otherUser.id);
 });
 
 afterAll(async () => {
@@ -85,11 +99,11 @@ test('PATCH /auth/me com nome + senha errada não salva o nome (atomicidade)', a
 // --- POST /auth/request-email-change ---
 
 test('POST /auth/request-email-change com e-mail já em uso retorna 409', async () => {
-  // usar o próprio e-mail como "novo" (já em uso pelo mesmo usuário conta como "em uso")
+  // usar o e-mail de outro usuário — deve retornar 409
   const res = await request(app)
     .post('/api/auth/request-email-change')
     .set('Authorization', `Bearer ${userToken}`)
-    .send({ newEmail: 'profile-test@example.com' });
+    .send({ newEmail: otherUserEmail });
   expect(res.status).toBe(409);
 });
 
