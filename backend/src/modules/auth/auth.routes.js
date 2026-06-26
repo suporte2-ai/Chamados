@@ -12,5 +12,8 @@ router.post('/logout', authenticated, asyncHandler(controller.logout));
 router.get('/me', authenticated, asyncHandler(controller.me));
 router.post('/forgot-password', asyncHandler(controller.forgotPassword));
 router.post('/reset-password', asyncHandler(controller.resetPassword));
+router.patch('/me', authenticated, asyncHandler(controller.updateMe));
+router.post('/request-email-change', authenticated, asyncHandler(controller.requestEmailChange));
+router.get('/confirm-email-change/:token', asyncHandler(controller.confirmEmailChange));
 
 module.exports = router;

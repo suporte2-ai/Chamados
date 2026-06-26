@@ -219,4 +219,107 @@ async function resetPassword(req, res) {
   res.status(200).json({ message: 'Senha redefinida com sucesso.' });
 }
 
-module.exports = { login, refresh, logout, me, forgotPassword, resetPassword };
+async function updateMe(req, res) {
+  const { name, currentPassword, newPassword } = req.body;
+  const changingName = name !== undefined;
+  const changingPassword = currentPassword !== undefined && newPassword !== undefined;
+
+  if (!changingName && !changingPassword) {
+    return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  const data = {};
+
+  if (changingName) {
+    if (!name.trim()) return res.status(400).json({ error: 'Nome não pode ser vazio.' });
+    data.name = name.trim();
+  }
+
+  if (changingPassword) {
+    const matches = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!matches) return res.status(400).json({ error: 'Senha atual incorreta.' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Nova senha deve ter ao menos 8 caracteres.' });
+    data.passwordHash = await bcrypt.hash(newPassword, 10);
+  }
+
+  const updated = await prisma.user.update({ where: { id: req.user.id }, data });
+  res.json({ id: updated.id, name: updated.name, email: updated.email, roleId: updated.roleId, sectorId: updated.sectorId });
+}
+
+async function requestEmailChange(req, res) {
+  const { newEmail } = req.body;
+  if (!newEmail || !newEmail.includes('@')) {
+    return res.status(400).json({ error: 'E-mail inválido.' });
+  }
+
+  const existing = await prisma.user.findFirst({
+    where: { email: { equals: newEmail, mode: 'insensitive' } },
+  });
+  if (existing) {
+    return res.status(409).json({ error: 'Este e-mail já está em uso.' });
+  }
+
+  await prisma.emailChangeToken.updateMany({
+    where: { userId: req.user.id, usedAt: null },
+    data: { usedAt: new Date(), reason: 'superseded' },
+  });
+
+  const token = crypto.randomUUID();
+  await prisma.emailChangeToken.create({
+    data: {
+      userId: req.user.id,
+      newEmail,
+      token,
+      expiresAt: new Date(Date.now() + 3600000),
+    },
+  });
+
+  const confirmLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/confirmar-email/${token}`;
+  console.log(`Link de confirmação de e-mail para ${newEmail}: ${confirmLink}`);
+
+  res.json({ message: `Link de confirmação enviado para ${newEmail}.` });
+}
+
+async function confirmEmailChange(req, res) {
+  const { token } = req.params;
+
+  const emailToken = await prisma.emailChangeToken.findUnique({ where: { token } });
+  if (!emailToken) {
+    return res.status(400).json({ error: 'Link inválido.' });
+  }
+  if (emailToken.expiresAt < new Date()) {
+    return res.status(400).json({ error: 'Link expirado.' });
+  }
+  if (emailToken.usedAt) {
+    const msg = emailToken.reason === 'superseded'
+      ? 'Este link foi substituído por uma solicitação mais recente.'
+      : 'Link já utilizado.';
+    return res.status(400).json({ error: msg });
+  }
+
+  const alreadyInUse = await prisma.user.findFirst({
+    where: { email: { equals: emailToken.newEmail, mode: 'insensitive' }, id: { not: emailToken.userId } },
+  });
+  if (alreadyInUse) {
+    return res.status(409).json({ error: 'Este e-mail já está em uso por outro usuário.' });
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.emailChangeToken.updateMany({
+      where: { id: emailToken.id, usedAt: null },
+      data: { usedAt: new Date(), reason: 'used' },
+    });
+    if (updated.count === 0) return null;
+    await tx.user.update({ where: { id: emailToken.userId }, data: { email: emailToken.newEmail } });
+    return true;
+  });
+
+  if (result === null) {
+    return res.status(400).json({ error: 'Link já utilizado.' });
+  }
+
+  res.json({ message: 'E-mail atualizado com sucesso.' });
+}
+
+module.exports = { login, refresh, logout, me, forgotPassword, resetPassword, updateMe, requestEmailChange, confirmEmailChange };
