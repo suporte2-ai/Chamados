@@ -8,7 +8,7 @@ const {
   notifyTicketReopened,
 } = require('../../lib/notificationService');
 
-const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title'];
+const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title', 'slaResolutionDeadline', 'slaFirstResponseDeadline'];
 const DEFAULT_PAGE_SIZE = 50;
 
 function serializeTicket(ticket) {

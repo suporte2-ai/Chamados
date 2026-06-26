@@ -256,4 +256,43 @@ async function exportData(req, res) {
   res.end(pdfBuffer);
 }
 
-module.exports = { summary, drilldown, exportData };
+async function volume(req, res) {
+  const dates = parseDates(req, res);
+  if (!dates) return;
+  const filters = parseFilters(req, res);
+  if (filters === null) return;
+
+  const { fromDate, toDate } = dates;
+  const sectorClause = filters.sectorId
+    ? Prisma.sql`AND "sectorId" = ${filters.sectorId}`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw`
+    SELECT
+      DATE_TRUNC('day', d.day)::date AS date,
+      SUM(d.created)::int            AS created,
+      SUM(d.resolved)::int           AS resolved
+    FROM (
+      SELECT "createdAt" AS day, 1 AS created, 0 AS resolved
+      FROM "tickets"
+      WHERE "createdAt" >= ${fromDate} AND "createdAt" <= ${toDate}
+      ${sectorClause}
+      UNION ALL
+      SELECT "resolvedAt" AS day, 0 AS created, 1 AS resolved
+      FROM "tickets"
+      WHERE "resolvedAt" IS NOT NULL
+        AND "resolvedAt" >= ${fromDate} AND "resolvedAt" <= ${toDate}
+      ${sectorClause}
+    ) d
+    GROUP BY DATE_TRUNC('day', d.day)
+    ORDER BY DATE_TRUNC('day', d.day) ASC
+  `;
+
+  res.json(rows.map(r => ({
+    date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date),
+    created: Number(r.created),
+    resolved: Number(r.resolved),
+  })));
+}
+
+module.exports = { summary, drilldown, exportData, volume };

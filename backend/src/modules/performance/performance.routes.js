@@ -11,5 +11,6 @@ const auth = [asyncHandler(authenticate), requirePermission('view_performance_pa
 router.get('/performance/summary', ...auth, asyncHandler(controller.summary));
 router.get('/performance/users/:id/drilldown', ...auth, asyncHandler(controller.drilldown));
 router.get('/performance/export', ...auth, asyncHandler(controller.exportData));
+router.get('/performance/volume', ...auth, asyncHandler(controller.volume));
 
 module.exports = router;
