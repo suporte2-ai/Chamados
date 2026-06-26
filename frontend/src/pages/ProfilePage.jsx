@@ -28,14 +28,20 @@ export default function ProfilePage() {
     setSavingName(true)
     try {
       await authApi.updateMe({ name: name.trim() })
-      const profile = await authApi.me()
-      setAuth(profile)
-      toast.success('Nome atualizado.')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao salvar nome.')
-    } finally {
       setSavingName(false)
+      return
     }
+    // Name saved successfully — now try to refresh the store
+    try {
+      const profile = await authApi.me()
+      setAuth(profile)
+    } catch {
+      // Store refresh failed silently — name was saved, user can reload
+    }
+    toast.success('Nome atualizado com sucesso.')
+    setSavingName(false)
   }
 
   const handleSavePassword = async (e) => {
