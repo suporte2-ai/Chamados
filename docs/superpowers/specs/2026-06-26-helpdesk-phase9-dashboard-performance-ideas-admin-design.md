@@ -61,7 +61,7 @@ O componente `ProtectedRoute` existente já suporta prop `permission` — basta 
 Três queries paralelas via TanStack Query:
 
 1. Contagens por status: `GET /api/tickets?pageSize=1&status=<S>` × 5 (apenas campo `total`)
-2. Meus tickets: `GET /api/tickets?assignedToId=<userId>&pageSize=10` (status ≠ FECHADO, ver nota abaixo)
+2. Meus tickets: `GET /api/tickets?assignedToId=<userId>&pageSize=50&sortBy=slaFirstResponseDeadline&sortOrder=asc` (status ≠ FECHADO, filtrado no cliente)
 3. Alertas SLA: `GET /api/tickets?pageSize=50&sortBy=slaResolutionDeadline&sortOrder=asc` — filtrado no cliente por `slaBadge === 'vermelho'` e `status !== 'FECHADO'`
 
 > **Nota:** `slaResolutionDeadline` requer adição ao `SORT_WHITELIST` em `tickets.controller.js` (ver "Alterações no backend"). O sort por deadline garante que os chamados mais próximos do vencimento apareçam primeiro — sem ele, o sort padrão `createdAt desc` retornaria tickets recentes que ainda têm SLA folgado.
@@ -84,21 +84,21 @@ Cinco cards com contagem por status. Cada card é clicável e navega para `/tick
 ### Meus tickets
 
 Tabela compacta com colunas: #ID · Título · Status badge · Urgência badge · SLA badge.
-- Ordenados por `slaFirstResponseDeadline asc`
+- Ordenados por `slaFirstResponseDeadline asc` (requer que `slaFirstResponseDeadline` seja adicionado ao `SORT_WHITELIST` — ver "Alterações no backend")
 - Link "Ver todos" → `/tickets?assignedToId=<userId>`
 - Visível apenas para usuários com campo `assigned_to` em `fieldVisible`
-- Query usa `assignedToId=<userId>` — como o backend aceita apenas `status` exato (sem "excluir status"), o filtro `status ≠ FECHADO` é aplicado no cliente sobre os 10 itens retornados
+- Query usa `pageSize=50` para garantir que o filtro client-side de `status ≠ FECHADO` tenha resultados suficientes mesmo para agentes com muitos tickets recentes fechados. O backend suporta apenas status exato (sem "excluir"), por isso a exclusão é feita no cliente.
 
 ### Alertas de SLA
 
 Lista dos chamados com `slaBadge === 'vermelho'`, não fechados, ordenados por deadline mais próximo.
-- Máximo 5 itens exibidos
+- Máximo 5 itens exibidos (pageSize=50 é best-effort — sistemas com 51+ tickets SLA vermelho simultâneos mostrarão apenas os 50 mais próximos do vencimento)
 - Link "Ver todos críticos" → `/tickets?sla=vermelho`
 - Visível apenas para usuários com campo `sla_badge` em `fieldVisible`
 
 ### Fallback para solicitantes
 
-Solicitantes comuns (sem `assigned_to` e sem `sla_badge` em `fieldVisible`) veem apenas os 5 cards de contagem no topo. Abaixo dos cards, exibir uma seção "Meus chamados abertos" simplificada usando `GET /api/tickets?requesterId=<userId>` — sem as colunas de SLA e atribuição. Isso garante que a Dashboard tenha conteúdo útil para todos os perfis.
+Solicitantes comuns (sem `assigned_to` e sem `sla_badge` em `fieldVisible`) veem apenas os 5 cards de contagem no topo. Abaixo dos cards, exibir uma seção "Meus chamados abertos" simplificada usando `GET /api/tickets` (sem filtros adicionais) — o middleware `ticketVisibilityWhere` já restringe automaticamente os resultados ao `requesterId` do usuário logado para perfis sem `view_all_tickets`. Exibe colunas: #ID · Título · Status · Urgência. Sem colunas de SLA ou atribuição.
 
 ---
 
@@ -190,7 +190,14 @@ Formulário: Título · Descrição · Área impactada · Benefício esperado ·
 
 ### Shell `/admin`
 
-Layout com sidebar secundária listando os 5 sub-módulos. Rota `/admin` redireciona para o primeiro módulo que o usuário tem permissão.
+Layout com sidebar secundária listando os 5 sub-módulos. Rota `/admin` redireciona para o primeiro módulo da seguinte ordem de prioridade que o usuário tem permissão:
+
+1. `manage_users` → `/admin/users`
+2. `manage_categories` → `/admin/categories`
+3. `manage_sla` → `/admin/sla`
+4. nenhuma das anteriores → `/admin/sectors` (requer qualquer `manage_*`)
+
+Se o usuário não tiver nenhuma permissão `manage_*`, a rota `/admin` está protegida por `ProtectedRoute` e redireciona para `/tickets`.
 
 ---
 
@@ -245,7 +252,11 @@ Página dedicada em duas seções:
 | internal_notes | Notas internas |
 | sla_badge | Badge de SLA |
 
-Salva em paralelo: `PATCH /api/roles/:id/permissions` + `PATCH /api/roles/:id/field-visibility` (singular). Se um dos dois falhar, exibe toast de erro e mantém o estado do formulário para reenvio — sem reset parcial.
+Salva em paralelo: `PATCH /api/roles/:id/permissions` + `PATCH /api/roles/:id/field-visibility` (singular). Se um dos dois falhar, exibe toast de erro e **re-faz fetch do estado atual do role** (`GET /api/roles`) antes de permitir reenvio — garantindo que o formulário reflita o estado real do servidor e não um estado misto.
+
+> **Nota — manage_roles:** A permissão `manage_roles` aparece nos checkboxes (é uma chave válida em `PERMISSION_KEYS`) mas nenhuma rota backend a verifica — `roles.routes.js` usa `manage_users` para tudo. Exibir o checkbox é correto (o administrador pode querer reservar a permissão para uso futuro), mas a implementação deve incluir um tooltip: "Esta permissão não tem efeito no backend atual".
+
+> **Aviso de segurança:** Qualquer usuário com `manage_users` pode editar permissões de qualquer role — incluindo o próprio. Isso representa escalada de privilégios irrestrita. Considerar um guard dedicado `manage_roles` no backend (como ajuste futuro pós-Fase 9).
 
 ---
 
@@ -322,14 +333,21 @@ Dois micro-ajustes necessários (nenhum quebra compatibilidade):
 ### 1. `SORT_WHITELIST` em `tickets.controller.js`
 
 ```js
-const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title', 'slaResolutionDeadline'];
+const SORT_WHITELIST = ['createdAt', 'urgency', 'status', 'title', 'slaResolutionDeadline', 'slaFirstResponseDeadline'];
 ```
 
-Habilita o sort `sortBy=slaResolutionDeadline` usado pelo Dashboard de alertas SLA.
+Habilita dois sorts usados pelo Dashboard:
+- `sortBy=slaResolutionDeadline` — Alertas SLA (tickets mais próximos de violar o prazo de resolução)
+- `sortBy=slaFirstResponseDeadline` — Meus Tickets (tickets mais urgentes em prazo de primeira resposta)
 
 ### 2. Novo endpoint `GET /api/performance/volume`
 
-Adicionar em `performance.controller.js` e registrar em `performance.routes.js`:
+Registrar em `performance.routes.js`:
+```js
+router.get('/performance/volume', asyncHandler(authenticate), asyncHandler(volume));
+```
+
+Implementar em `performance.controller.js`:
 
 ```
 GET /api/performance/volume?from=YYYY-MM-DD&to=YYYY-MM-DD[&sectorId=]
@@ -337,7 +355,26 @@ GET /api/performance/volume?from=YYYY-MM-DD&to=YYYY-MM-DD[&sectorId=]
 
 Resposta: `[{ date: 'YYYY-MM-DD', created: N, resolved: N }]`
 
-Implementação: `prisma.$queryRaw` com `DATE_TRUNC('day', "createdAt")` agrupando por dia. ~25 linhas. Requer os mesmos guards de autenticação/permissão dos outros endpoints de performance.
+Implementação via `prisma.$queryRaw` com agregação condicional em uma única query (mesmo padrão do `buildSummary`):
+
+```sql
+SELECT
+  DATE_TRUNC('day', d.day) AS date,
+  SUM(d.created)::int       AS created,
+  SUM(d.resolved)::int      AS resolved
+FROM (
+  SELECT "createdAt"  AS day, 1 AS created, 0 AS resolved FROM "tickets"
+    WHERE "createdAt" >= ${fromDate} AND "createdAt" <= ${toDate}
+  UNION ALL
+  SELECT "resolvedAt" AS day, 0 AS created, 1 AS resolved FROM "tickets"
+    WHERE "resolvedAt" IS NOT NULL
+      AND "resolvedAt" >= ${fromDate} AND "resolvedAt" <= ${toDate}
+) d
+GROUP BY DATE_TRUNC('day', d.day)
+ORDER BY date ASC
+```
+
+Adicionar filtro `sectorId` via `AND "sectorId" = ${sectorId}` em ambas as sub-queries quando o param estiver presente. Requer os mesmos guards de autenticação/permissão dos outros endpoints de performance.
 
 ---
 
