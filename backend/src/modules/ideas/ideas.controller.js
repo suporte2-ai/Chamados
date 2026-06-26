@@ -100,7 +100,13 @@ async function detail(req, res) {
     return res.status(403).json({ error: 'Acesso negado.' });
   }
 
-  res.json(serialize(idea, req.user.id, hasManageIdeas));
+  const comments = await prisma.ideaComment.findMany({
+    where: { ideaId: id },
+    orderBy: { createdAt: 'asc' },
+    include: { author: { select: { id: true, name: true } } },
+  });
+
+  res.json({ ...serialize(idea, req.user.id, hasManageIdeas), comments });
 }
 
 async function updateStatus(req, res) {
@@ -172,4 +178,44 @@ async function toggleVote(req, res) {
   res.json({ voted: !existing, voteCount });
 }
 
-module.exports = { create, list, detail, updateStatus, toggleVote };
+async function addComment(req, res) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'id deve ser um número inteiro positivo.' });
+  }
+
+  const { body } = req.body;
+  if (!body || !body.trim()) {
+    return res.status(400).json({ error: 'body é obrigatório.' });
+  }
+
+  const idea = await prisma.idea.findUnique({ where: { id } });
+  if (!idea) return res.status(404).json({ error: 'Ideia não encontrada.' });
+
+  const comment = await prisma.ideaComment.create({
+    data: { ideaId: id, authorId: req.user.id, body: body.trim() },
+    include: { author: { select: { id: true, name: true } } },
+  });
+
+  res.status(201).json(comment);
+}
+
+async function deleteComment(req, res) {
+  const cid = Number(req.params.cid);
+  if (!Number.isInteger(cid) || cid <= 0) {
+    return res.status(400).json({ error: 'cid deve ser um número inteiro positivo.' });
+  }
+
+  const comment = await prisma.ideaComment.findUnique({ where: { id: cid } });
+  if (!comment) return res.status(404).json({ error: 'Comentário não encontrado.' });
+
+  const hasManageIdeas = req.user.permissions.has('manage_ideas');
+  if (comment.authorId !== req.user.id && !hasManageIdeas) {
+    return res.status(403).json({ error: 'Você não pode excluir este comentário.' });
+  }
+
+  await prisma.ideaComment.delete({ where: { id: cid } });
+  res.status(204).send();
+}
+
+module.exports = { create, list, detail, updateStatus, toggleVote, addComment, deleteComment };

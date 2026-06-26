@@ -15,4 +15,7 @@ router.get('/ideas/:id', authenticated, asyncHandler(controller.detail));
 router.patch('/ideas/:id/status', ...auth, asyncHandler(controller.updateStatus));
 router.post('/ideas/:id/vote', authenticated, asyncHandler(controller.toggleVote));
 
+router.post('/ideas/:id/comments', authenticated, asyncHandler(controller.addComment));
+router.delete('/ideas/:id/comments/:cid', authenticated, asyncHandler(controller.deleteComment));
+
 module.exports = router;
