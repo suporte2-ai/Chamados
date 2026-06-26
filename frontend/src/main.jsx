@@ -1,9 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { QueryClientProvider } from '@tanstack/react-query'
+import queryClient from '@/lib/queryClient'
+import App from './App'
 import './index.css'
+import { Toaster } from '@/components/ui/sonner'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <div className="p-4 text-lg font-bold">Helpdesk — scaffold OK</div>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Toaster richColors />
+    </QueryClientProvider>
   </React.StrictMode>
 )
