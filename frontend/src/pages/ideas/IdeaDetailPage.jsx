@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { cn, timeAgo } from '@/lib/utils'
 import { IDEA_STATUS_LABELS, IDEA_STATUS_COLORS } from './IdeasListPage'
 
 const VALID_TRANSITIONS = {
@@ -25,11 +25,13 @@ export default function IdeaDetailPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const permissions = useAuthStore((s) => s.permissions)
+  const user = useAuthStore((s) => s.user)
   const canManage = permissions.has('manage_ideas')
 
   const [newStatus, setNewStatus] = useState('')
   const [managerNote, setManagerNote] = useState('')
   const [savingStatus, setSavingStatus] = useState(false)
+  const [commentBody, setCommentBody] = useState('')
 
   const { data: idea, isLoading, isError } = useQuery({
     queryKey: ['ideas', id],
@@ -37,6 +39,21 @@ export default function IdeaDetailPage() {
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['ideas', id] })
+
+  const addCommentMutation = useMutation({
+    mutationFn: (body) => ideasApi.addComment(id, body),
+    onSuccess: () => {
+      invalidate()
+      setCommentBody('')
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Erro ao comentar.'),
+  })
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (cid) => ideasApi.deleteComment(id, cid),
+    onSuccess: () => invalidate(),
+    onError: (err) => toast.error(err.response?.data?.error || 'Erro ao excluir comentário.'),
+  })
 
   const voteMutation = useMutation({
     mutationFn: () => ideasApi.toggleVote(id),
@@ -159,6 +176,56 @@ export default function IdeaDetailPage() {
           </Button>
         </div>
       )}
+
+      {/* Comentários */}
+      <div className="bg-white border rounded-lg p-6 space-y-4">
+        <p className="font-medium text-sm">Comentários ({(idea.comments || []).length})</p>
+
+        {(idea.comments || []).length === 0 ? (
+          <p className="text-sm text-gray-400">Seja o primeiro a comentar.</p>
+        ) : (
+          <div className="divide-y border rounded-lg">
+            {(idea.comments || []).map((c) => (
+              <div key={c.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-700">{c.author.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
+                    {c.author.id === user?.id && (
+                      <button
+                        onClick={() => deleteCommentMutation.mutate(c.id)}
+                        disabled={deleteCommentMutation.isPending}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Excluir
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Textarea
+            value={commentBody}
+            onChange={(e) => setCommentBody(e.target.value)}
+            placeholder="Escreva um comentário..."
+            rows={3}
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={!commentBody.trim() || addCommentMutation.isPending}
+              onClick={() => addCommentMutation.mutate(commentBody.trim())}
+            >
+              {addCommentMutation.isPending ? 'Enviando...' : 'Comentar'}
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <Button variant="outline" size="sm" onClick={() => navigate('/ideas')}>← Voltar às ideias</Button>
     </div>

@@ -6,4 +6,6 @@ export const ideasApi = {
   create: (body) => api.post('/api/ideas', body).then(r => r.data),
   updateStatus: (id, body) => api.patch(`/api/ideas/${id}/status`, body).then(r => r.data),
   toggleVote: (id) => api.post(`/api/ideas/${id}/vote`).then(r => r.data),
+  addComment: (id, body) => api.post(`/api/ideas/${id}/comments`, { body }).then(r => r.data),
+  deleteComment: (ideaId, cid) => api.delete(`/api/ideas/${ideaId}/comments/${cid}`),
 }
