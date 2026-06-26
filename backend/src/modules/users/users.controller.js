@@ -90,6 +90,7 @@ async function update(req, res) {
 
 async function listUserSectors(req, res) {
   const id = Number(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ error: 'id inválido.' })
   const user = await prisma.user.findUnique({
     where: { id },
     include: {
@@ -106,7 +107,11 @@ async function listUserSectors(req, res) {
 
 async function addUserSector(req, res) {
   const id = Number(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ error: 'id inválido.' })
   const { sectorId, type } = req.body
+  if (!sectorId || isNaN(Number(sectorId))) {
+    return res.status(400).json({ error: 'sectorId obrigatório e deve ser um número.' })
+  }
 
   if (type !== 'member' && type !== 'extra') {
     return res.status(400).json({ error: 'type inválido.' })
@@ -136,7 +141,9 @@ async function addUserSector(req, res) {
 
 async function updateUserSector(req, res) {
   const id = Number(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ error: 'id inválido.' })
   const sid = Number(req.params.sid)
+  if (isNaN(sid)) return res.status(400).json({ error: 'sid inválido.' })
   const { type } = req.body
 
   if (type !== 'member' && type !== 'extra') {
@@ -161,7 +168,9 @@ async function updateUserSector(req, res) {
 
 async function removeUserSector(req, res) {
   const id = Number(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ error: 'id inválido.' })
   const sid = Number(req.params.sid)
+  if (isNaN(sid)) return res.status(400).json({ error: 'sid inválido.' })
 
   const user = await prisma.user.findUnique({ where: { id } })
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' })

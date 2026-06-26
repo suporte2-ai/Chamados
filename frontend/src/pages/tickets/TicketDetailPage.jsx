@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -54,12 +54,19 @@ export default function TicketDetailPage() {
     queryFn: () => ticketsApi.get(id),
   })
 
-  const ticketSectorId = ticket?.sector?.id ?? ticket?.sectorId
+  const ticketSectorId = ticket?.sectorId
   const { data: users = [] } = useQuery({
     queryKey: ['sector-users', ticketSectorId],
     queryFn: () => sectorsApi.listUsers(ticketSectorId).catch(() => []),
     enabled: permissions.has('reassign_tickets') && !!ticketSectorId,
   })
+
+  const pickerUsers = useMemo(() => {
+    if (!ticket?.assignedToId) return users
+    if (users.some(u => u.id === ticket.assignedToId)) return users
+    const current = ticket.assignedTo ? { id: ticket.assignedToId, name: ticket.assignedTo.name } : null
+    return current ? [current, ...users] : users
+  }, [users, ticket?.assignedToId, ticket?.assignedTo])
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['tickets', id] })
 
@@ -346,7 +353,7 @@ export default function TicketDetailPage() {
                   className="border rounded-md px-2 py-1.5 text-sm w-full"
                 >
                   <option value="">— Não atribuído —</option>
-                  {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  {pickerUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               ) : (
                 <p className="text-gray-700">{ticket.assignedTo?.name ?? '— Não atribuído —'}</p>
