@@ -52,7 +52,7 @@ async function create(req, res) {
 }
 
 async function list(req, res) {
-  const { status, urgency, categoryId, subcategoryId, assignedToId, sectorId, search, sortBy, sortOrder } = req.query;
+  const { status, urgency, categoryId, subcategoryId, assignedToId, sectorId, search, sortBy, sortOrder, from, to } = req.query;
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = Math.max(1, Number(req.query.pageSize) || DEFAULT_PAGE_SIZE);
 
@@ -63,6 +63,15 @@ async function list(req, res) {
   if (subcategoryId) where.subcategoryId = Number(subcategoryId);
   if (assignedToId) where.assignedToId = Number(assignedToId);
   if (sectorId) where.sectorId = Number(sectorId);
+  if (from || to) {
+    where.createdAt = {};
+    if (from) where.createdAt.gte = new Date(from);
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setUTCHours(23, 59, 59, 999);
+      where.createdAt.lte = toDate;
+    }
+  }
   if (search) {
     where.AND = [
       ...(where.AND || []),
@@ -94,15 +103,26 @@ async function detail(req, res) {
     return res.status(403).json({ error: 'Você não tem acesso a este chamado.' });
   }
 
-  const comments = await prisma.ticketComment.findMany({
-    where: {
-      ticketId: id,
-      ...(req.user.permissions.has('view_internal_notes') ? {} : { isInternal: false }),
-    },
-    orderBy: { createdAt: 'asc' },
-  });
+  const [comments, timeLogs, attachments] = await Promise.all([
+    prisma.ticketComment.findMany({
+      where: {
+        ticketId: id,
+        ...(req.user.permissions.has('view_internal_notes') ? {} : { isInternal: false }),
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.ticketTimeLog.findMany({
+      where: { ticketId: id },
+      orderBy: { occurredAt: 'asc' },
+    }),
+    prisma.ticketAttachment.findMany({
+      where: { ticketId: id },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, fileName: true, createdAt: true, uploadedById: true, commentId: true },
+    }),
+  ]);
 
-  res.json({ ...serializeTicket(ticket), comments });
+  res.json({ ...serializeTicket(ticket), comments, timeLogs, attachments });
 }
 
 async function update(req, res) {
