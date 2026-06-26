@@ -49,8 +49,9 @@ model Sector {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  users   User[]
-  tickets Ticket[]
+  users       User[]
+  tickets     Ticket[]
+  userSectors UserSector[]
 
   @@map("sectors")
 }
@@ -84,6 +85,7 @@ model User {
 
   notifications Notification[]
   emailChangeTokens EmailChangeToken[]
+  userSectors       UserSector[]
 
   @@map("users")
 }
@@ -325,4 +327,18 @@ model EmailChangeToken {
   createdAt DateTime  @default(now())
 
   @@map("email_change_tokens")
+}
+
+model UserSector {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectorId  Int
+  sector    Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  type      String   // 'member' | 'extra'
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sectorId])
+  @@index([sectorId])
+  @@map("user_sectors")
 }
