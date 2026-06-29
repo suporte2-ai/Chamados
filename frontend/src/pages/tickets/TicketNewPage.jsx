@@ -65,77 +65,80 @@ export default function TicketNewPage() {
 
   const clearError = (key) => setErrors((prev) => ({ ...prev, [key]: undefined }))
 
+  const selectCls = 'border border-border rounded-md px-3 py-2 text-sm w-full bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
+
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-semibold mb-6">Novo Chamado</h1>
-      <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-6 space-y-5">
+      <h1 className="text-xl font-semibold mb-6 text-foreground">Novo Chamado</h1>
+      <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-5">
+
         <div>
-          <label className="block text-sm font-medium mb-1">Título *</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">Título *</label>
           <Input
             value={title}
             onChange={(e) => { setTitle(e.target.value); clearError('title') }}
             placeholder="Descreva brevemente o problema"
             autoFocus
           />
-          {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
+          {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Descrição *</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">Descrição *</label>
           <Textarea
             value={description}
             onChange={(e) => { setDescription(e.target.value); clearError('description') }}
             placeholder="Detalhe o problema, incluindo mensagens de erro e passos para reproduzir"
             rows={4}
           />
-          {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+          {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Categoria *</label>
+            <label className="block text-sm font-medium mb-1 text-foreground">Categoria *</label>
             <select
               value={categoryId}
               onChange={(e) => { setCategoryId(e.target.value); setSubcategoryId(''); clearError('categoryId') }}
-              className="border rounded-md px-3 py-2 text-sm w-full"
+              className={selectCls}
             >
               <option value="">Selecione...</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            {errors.categoryId && <p className="text-sm text-red-600 mt-1">{errors.categoryId}</p>}
+            {errors.categoryId && <p className="text-sm text-red-500 mt-1">{errors.categoryId}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-foreground">
               Subcategoria {subcategories.length > 0 ? '*' : ''}
             </label>
             <select
               value={subcategoryId}
               onChange={(e) => { setSubcategoryId(e.target.value); clearError('subcategoryId') }}
-              className="border rounded-md px-3 py-2 text-sm w-full"
+              className={selectCls}
               disabled={!categoryId || subcategories.length === 0}
             >
               <option value="">Selecione...</option>
               {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            {errors.subcategoryId && <p className="text-sm text-red-600 mt-1">{errors.subcategoryId}</p>}
+            {errors.subcategoryId && <p className="text-sm text-red-500 mt-1">{errors.subcategoryId}</p>}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Urgência *</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">Urgência *</label>
           <select
             value={urgency}
             onChange={(e) => { setUrgency(e.target.value); clearError('urgency') }}
-            className="border rounded-md px-3 py-2 text-sm w-full max-w-xs"
+            className={`${selectCls} max-w-xs`}
           >
             <option value="">Selecione...</option>
             {Object.entries(URGENCY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
-          {errors.urgency && <p className="text-sm text-red-600 mt-1">{errors.urgency}</p>}
+          {errors.urgency && <p className="text-sm text-red-500 mt-1">{errors.urgency}</p>}
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-2 border-t border-border">
           <Button type="submit" disabled={loading}>
             {loading ? 'Abrindo...' : 'Abrir Chamado'}
           </Button>
