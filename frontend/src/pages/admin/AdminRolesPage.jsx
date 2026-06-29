@@ -22,17 +22,17 @@ export default function AdminRolesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Perfis de Acesso</h1>
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <h1 className="text-xl font-semibold text-foreground">Perfis de Acesso</h1>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
               {['Nome', 'Nível', ''].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium text-gray-600 text-xs">{h}</th>
+                <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}>{Array.from({ length: 3 }).map((_, j) => (
@@ -40,9 +40,9 @@ export default function AdminRolesPage() {
                 ))}</tr>
               ))
               : roles.map(role => (
-                <tr key={role.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{role.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{role.level}</td>
+                <tr key={role.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{role.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{role.level}</td>
                   <td className="px-4 py-3 flex gap-3">
                     <button
                       onClick={() => navigate(`/admin/roles/${role.id}`)}

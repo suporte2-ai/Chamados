@@ -34,8 +34,8 @@ export default function AdminSectorsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Setores</h1>
-      <p className="text-sm text-gray-500">Setores são estáveis — apenas criação é suportada.</p>
+      <h1 className="text-xl font-semibold text-foreground">Setores</h1>
+      <p className="text-sm text-muted-foreground">Setores são estáveis — apenas criação é suportada.</p>
       <div className="flex gap-2">
         <Input
           placeholder="Nome do novo setor..."
@@ -48,20 +48,22 @@ export default function AdminSectorsPage() {
           <Plus className="h-4 w-4 mr-1" /> Criar
         </Button>
       </div>
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600 text-xs">Nome</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Nome</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}><td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td></tr>
               ))
               : sectors.map(s => (
-                <tr key={s.id}><td className="px-4 py-3 font-medium">{s.name}</td></tr>
+                <tr key={s.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
+                </tr>
               ))
             }
           </tbody>

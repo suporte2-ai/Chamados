@@ -45,18 +45,18 @@ export default function AdminSlaPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Configuração de SLA</h1>
-      <p className="text-sm text-gray-500">Clique fora do campo para salvar automaticamente.</p>
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <h1 className="text-xl font-semibold text-foreground">Configuração de SLA</h1>
+      <p className="text-sm text-muted-foreground">Clique fora do campo para salvar automaticamente.</p>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
               {['Urgência', 'Primeira resposta (h)', 'Resolução (h)'].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium text-gray-600 text-xs">{h}</th>
+                <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}>{[1,2,3].map(j => (
@@ -64,8 +64,8 @@ export default function AdminSlaPage() {
                 ))}</tr>
               ))
               : URGENCY_ORDER.map(urgency => (
-                <tr key={urgency}>
-                  <td className="px-4 py-3 font-medium">{URGENCY_LABELS[urgency]}</td>
+                <tr key={urgency} className="hover:bg-muted/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{URGENCY_LABELS[urgency]}</td>
                   <td className="px-4 py-3">
                     <input
                       type="number"
@@ -77,7 +77,7 @@ export default function AdminSlaPage() {
                         [urgency]: { ...v[urgency], firstResponseHours: e.target.value },
                       }))}
                       onBlur={e => handleBlur(urgency, 'firstResponseHours', e.target.value)}
-                      className="border rounded-md px-3 py-1.5 text-sm w-24"
+                      className="border border-border rounded-md px-3 py-1.5 text-sm w-24 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -91,7 +91,7 @@ export default function AdminSlaPage() {
                         [urgency]: { ...v[urgency], resolutionHours: e.target.value },
                       }))}
                       onBlur={e => handleBlur(urgency, 'resolutionHours', e.target.value)}
-                      className="border rounded-md px-3 py-1.5 text-sm w-24"
+                      className="border border-border rounded-md px-3 py-1.5 text-sm w-24 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                 </tr>

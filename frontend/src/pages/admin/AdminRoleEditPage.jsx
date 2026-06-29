@@ -96,40 +96,47 @@ export default function AdminRoleEditPage() {
     )
   }
 
-  if (!role) return <p className="text-gray-500">Perfil não encontrado.</p>
+  if (!role) return <p className="text-muted-foreground">Perfil não encontrado.</p>
 
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/admin/roles')} className="text-gray-400 hover:text-gray-600">←</button>
-        <h1 className="text-xl font-semibold">{role.name}</h1>
+        <button
+          onClick={() => navigate('/admin/roles')}
+          className="text-muted-foreground hover:text-foreground transition-colors text-lg"
+        >
+          ←
+        </button>
+        <h1 className="text-xl font-semibold text-foreground">{role.name}</h1>
       </div>
 
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <h2 className="font-medium text-sm text-gray-700">Permissões</h2>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium text-sm text-foreground">Permissões</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {Object.entries(PERMISSION_LABELS).map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer py-1">
+            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer py-1 text-foreground">
               <input
                 type="checkbox"
                 checked={permissions[key] ?? false}
                 onChange={e => setPermissions(p => ({ ...p, [key]: e.target.checked }))}
+                className="accent-blue-600"
               />
-              <span className={key === 'manage_roles' ? 'text-gray-400' : ''}>{label}</span>
+              <span className={key === 'manage_roles' ? 'text-muted-foreground' : ''}>{label}</span>
             </label>
           ))}
         </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <h2 className="font-medium text-sm text-gray-700">Visibilidade de campos</h2>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium text-sm text-foreground">Visibilidade de campos</h2>
         <div className="space-y-2">
           {Object.entries(FIELD_LABELS).map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer py-1">
+            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer py-1 text-foreground">
               <input
                 type="checkbox"
                 checked={fieldVis[key] ?? false}
                 onChange={e => setFieldVis(f => ({ ...f, [key]: e.target.checked }))}
+                className="accent-blue-600"
               />
               {label}
             </label>

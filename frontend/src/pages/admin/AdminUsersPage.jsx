@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 
+const selectCls = 'border border-border rounded px-1 py-0.5 text-xs bg-background text-foreground disabled:opacity-50'
+
 function UserSectors({ userId, sectors, primarySectorId }) {
   const qc = useQueryClient()
   const [adding, setAdding] = useState(false)
@@ -75,12 +77,12 @@ function UserSectors({ userId, sectors, primarySectorId }) {
     <div className="pt-1 space-y-1">
       {linked.map(us => (
         <div key={us.id} className="flex items-center gap-2 text-xs">
-          <span className="text-gray-600">{us.name}</span>
+          <span className="text-foreground">{us.name}</span>
           <select
             value={us.type}
             onChange={e => handleTypeChange(us.id, e.target.value)}
             disabled={changingId === us.id}
-            className="border rounded px-1 py-0.5 text-xs disabled:opacity-50"
+            className={selectCls}
           >
             <option value="member">membro</option>
             <option value="extra">extra</option>
@@ -88,7 +90,7 @@ function UserSectors({ userId, sectors, primarySectorId }) {
           <button
             onClick={() => handleRemove(us.id)}
             disabled={removingId === us.id}
-            className="text-red-400 hover:text-red-600 text-xs disabled:opacity-50"
+            className="text-red-400 hover:text-red-500 text-xs disabled:opacity-50"
           >
             ×
           </button>
@@ -100,7 +102,7 @@ function UserSectors({ userId, sectors, primarySectorId }) {
           <select
             value={newSectorId}
             onChange={e => setNewSectorId(e.target.value)}
-            className="border rounded px-1 py-0.5 text-xs"
+            className={selectCls}
           >
             <option value="">Setor...</option>
             {available.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -108,7 +110,7 @@ function UserSectors({ userId, sectors, primarySectorId }) {
           <select
             value={newType}
             onChange={e => setNewType(e.target.value)}
-            className="border rounded px-1 py-0.5 text-xs"
+            className={selectCls}
           >
             <option value="member">membro</option>
             <option value="extra">extra</option>
@@ -120,7 +122,7 @@ function UserSectors({ userId, sectors, primarySectorId }) {
           >
             Adicionar
           </button>
-          <button onClick={() => setAdding(false)} className="text-gray-400 hover:text-gray-600">cancelar</button>
+          <button onClick={() => setAdding(false)} className="text-muted-foreground hover:text-foreground">cancelar</button>
         </div>
       ) : (
         <button
@@ -172,45 +174,47 @@ function UserModal({ user, roles, sectors, onClose, onSave }) {
     }
   }
 
+  const modalSelectCls = 'border border-border rounded-md px-3 py-2 text-sm w-full bg-background text-foreground'
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
-        <h2 className="font-semibold">{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <h2 className="font-semibold text-foreground">{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</h2>
         <div>
-          <label className="block text-sm font-medium mb-1">Nome *</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">Nome *</label>
           <Input value={form.name} onChange={e => set('name', e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">E-mail *</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">E-mail *</label>
           <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} />
         </div>
         {!isEdit && (
           <div>
-            <label className="block text-sm font-medium mb-1">Senha *</label>
+            <label className="block text-sm font-medium mb-1 text-foreground">Senha *</label>
             <Input type="password" value={form.password} onChange={e => set('password', e.target.value)} />
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium mb-1">Perfil *</label>
-          <select value={form.roleId} onChange={e => set('roleId', e.target.value)} className="border rounded-md px-3 py-2 text-sm w-full">
+          <label className="block text-sm font-medium mb-1 text-foreground">Perfil *</label>
+          <select value={form.roleId} onChange={e => set('roleId', e.target.value)} className={modalSelectCls}>
             <option value="">Selecione...</option>
             {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Setor *</label>
-          <select value={form.sectorId} onChange={e => set('sectorId', e.target.value)} className="border rounded-md px-3 py-2 text-sm w-full">
+          <label className="block text-sm font-medium mb-1 text-foreground">Setor *</label>
+          <select value={form.sectorId} onChange={e => set('sectorId', e.target.value)} className={modalSelectCls}>
             <option value="">Selecione...</option>
             {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
         {isEdit && (
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground">
             <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} />
             Ativo
           </label>
         )}
-        <div className="flex gap-3 justify-end pt-2">
+        <div className="flex gap-3 justify-end pt-2 border-t border-border">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave} disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</Button>
         </div>
@@ -232,19 +236,19 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Usuários</h1>
+        <h1 className="text-xl font-semibold text-foreground">Usuários</h1>
         <Button onClick={() => setModal({ user: null })}>+ Novo Usuário</Button>
       </div>
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
               {['Nome', 'E-mail', 'Perfil', 'Setor', 'Status', 'Último acesso', ''].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium text-gray-600 text-xs">{h}</th>
+                <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>{Array.from({ length: 7 }).map((_, j) => (
@@ -252,20 +256,27 @@ export default function AdminUsersPage() {
                 ))}</tr>
               ))
               : users.map(u => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{u.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                  <td className="px-4 py-3 text-gray-500">{u.role?.name || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">
-                    <div className="text-gray-500">{u.sector?.name || '—'} <span className="text-xs text-gray-400">(principal)</span></div>
+                <tr key={u.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{u.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.role?.name || '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    <div className="text-foreground">
+                      {u.sector?.name || '—'}
+                      <span className="text-xs text-muted-foreground ml-1">(principal)</span>
+                    </div>
                     <UserSectors userId={u.id} sectors={sectors} primarySectorId={u.sectorId} />
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      u.active
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                    }`}>
                       {u.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{u.lastLoginAt ? formatDate(u.lastLoginAt) : '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.lastLoginAt ? formatDate(u.lastLoginAt) : '—'}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => setModal({ user: u })} className="text-blue-600 hover:underline text-xs">Editar</button>
                   </td>
