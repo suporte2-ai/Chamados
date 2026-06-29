@@ -63,12 +63,12 @@ export default function TicketListPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Chamados</h1>
+        <h1 className="text-xl font-semibold text-foreground">Chamados</h1>
         <Button onClick={() => navigate('/tickets/new')}>+ Novo Chamado</Button>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white border rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bg-card border border-border rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
         <Input
           placeholder="Buscar..."
           value={search}
@@ -77,7 +77,7 @@ export default function TicketListPage() {
         <select
           value={get('status')}
           onChange={(e) => set('status', e.target.value)}
-          className="border rounded-md px-3 py-2 text-sm w-full"
+          className="border border-border rounded-md px-3 py-2 text-sm w-full bg-background text-foreground"
         >
           <option value="">Todos os status</option>
           {Object.entries(STATUS_LABELS).map(([s, label]) => <option key={s} value={s}>{label}</option>)}
@@ -85,7 +85,7 @@ export default function TicketListPage() {
         <select
           value={get('urgency')}
           onChange={(e) => set('urgency', e.target.value)}
-          className="border rounded-md px-3 py-2 text-sm w-full"
+          className="border border-border rounded-md px-3 py-2 text-sm w-full bg-background text-foreground"
         >
           <option value="">Todas as urgências</option>
           {Object.entries(URGENCY_LABELS).map(([u, label]) => <option key={u} value={u}>{label}</option>)}
@@ -95,36 +95,36 @@ export default function TicketListPage() {
             type="date"
             value={get('from')}
             onChange={(e) => set('from', e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm flex-1"
+            className="border border-border rounded-md px-3 py-2 text-sm flex-1 bg-background text-foreground"
             title="De"
           />
           <input
             type="date"
             value={get('to')}
             onChange={(e) => set('to', e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm flex-1"
+            className="border border-border rounded-md px-3 py-2 text-sm flex-1 bg-background text-foreground"
             title="Até"
           />
         </div>
       </div>
 
       {/* Tabela */}
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b bg-gray-50">
+            <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 w-24">#</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Título</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden sm:table-cell">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden md:table-cell">Urgência</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Setor</th>
-                {showAssignedTo && <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Atribuído a</th>}
-                {showSla && <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">SLA</th>}
-                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">Criado em</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-24">#</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Título</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Urgência</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Setor</th>
+                {showAssignedTo && <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Atribuído a</th>}
+                {showSla && <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden xl:table-cell">SLA</th>}
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Criado em</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-border">
               {isLoading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
@@ -137,37 +137,37 @@ export default function TicketListPage() {
                     <tr
                       key={t.id}
                       onClick={() => navigate(`/tickets/${t.id}`)}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-muted/40 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3 text-gray-500 font-mono">{formatTicketId(t.id)}</td>
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{t.title}</td>
+                      <td className="px-4 py-3 text-muted-foreground font-mono">{formatTicketId(t.id)}</td>
+                      <td className="px-4 py-3 font-medium text-foreground max-w-xs truncate">{t.title}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
+                        <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
                           {STATUS_LABELS[t.status]}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
+                        <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
                           {URGENCY_LABELS[t.urgency]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{t.sector?.name ?? '—'}</td>
-                      {showAssignedTo && <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{t.assignedToId || '—'}</td>}
+                      <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{t.sector?.name ?? '—'}</td>
+                      {showAssignedTo && <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{t.assignedToId || '—'}</td>}
                       {showSla && (
                         <td className="px-4 py-3 hidden xl:table-cell">
                           {t.slaBadge ? (
-                            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
+                            <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
                               {SLA_BADGE_LABELS[t.slaBadge] ?? t.slaBadge}
                             </span>
                           ) : '—'}
                         </td>
                       )}
-                      <td className="px-4 py-3 text-gray-500 hidden xl:table-cell whitespace-nowrap">{formatDate(t.createdAt)}</td>
+                      <td className="px-4 py-3 text-muted-foreground hidden xl:table-cell whitespace-nowrap">{formatDate(t.createdAt)}</td>
                     </tr>
                   ))
               }
               {!isLoading && tickets.length === 0 && (
-                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400">Nenhum chamado encontrado.</td></tr>
+                <tr><td colSpan="8" className="px-4 py-8 text-center text-muted-foreground">Nenhum chamado encontrado.</td></tr>
               )}
             </tbody>
           </table>
@@ -175,13 +175,13 @@ export default function TicketListPage() {
 
         {/* Paginação */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-            <span className="text-sm text-gray-600">{total} chamados</span>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            <span className="text-sm text-muted-foreground">{total} chamados</span>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                 Anterior
               </Button>
-              <span className="text-sm px-2 py-1">{page} / {totalPages}</span>
+              <span className="text-sm px-2 py-1 text-foreground">{page} / {totalPages}</span>
               <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
                 Próxima
               </Button>

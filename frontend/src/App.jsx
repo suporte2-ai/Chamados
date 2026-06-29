@@ -1,3 +1,4 @@
+import { ThemeProvider } from 'next-themes'
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom'
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { authApi } from '@/api/auth'
@@ -148,5 +149,9 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  )
 }

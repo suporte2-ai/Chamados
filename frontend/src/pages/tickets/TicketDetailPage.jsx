@@ -138,7 +138,7 @@ export default function TicketDetailPage() {
   if (isError || !ticket) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-500 text-lg">Chamado não encontrado.</p>
+        <p className="text-muted-foreground text-lg">Chamado não encontrado.</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate('/tickets')}>
           Voltar à lista
         </Button>
@@ -160,11 +160,11 @@ export default function TicketDetailPage() {
   return (
     <div className="max-w-5xl space-y-6">
       {/* Header */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card border border-border rounded-xl p-6">
         <div className="flex flex-wrap items-start gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-gray-400 font-mono">{formatTicketId(ticket.id)}</p>
-            <h1 className="text-xl font-semibold mt-1 break-words">{ticket.title}</h1>
+            <p className="text-sm text-muted-foreground font-mono">{formatTicketId(ticket.id)}</p>
+            <h1 className="text-xl font-bold mt-1 break-words text-foreground">{ticket.title}</h1>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <span className={cn('px-2.5 py-1 rounded-full text-xs font-medium', STATUS_COLORS[ticket.status])}>
@@ -180,7 +180,7 @@ export default function TicketDetailPage() {
             )}
           </div>
         </div>
-        <p className="text-sm text-gray-600 mt-4 whitespace-pre-wrap">{ticket.description}</p>
+        <p className="text-sm text-muted-foreground mt-4 whitespace-pre-wrap">{ticket.description}</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
@@ -188,31 +188,37 @@ export default function TicketDetailPage() {
         <div className="flex-1 space-y-6">
 
           {/* Comentários */}
-          <div className="bg-white border rounded-lg">
-            <div className="px-6 py-4 border-b font-medium text-sm">Comentários</div>
-            <div className="divide-y">
+          <div className="bg-card border border-border rounded-xl">
+            <div className="px-6 py-4 border-b bg-muted/40 font-medium text-sm text-foreground">Comentários</div>
+            <div className="divide-y divide-border">
               {(ticket.comments || []).map((c) => (
-                <div
-                  key={c.id}
-                  className={cn('px-6 py-4', c.isInternal && 'bg-yellow-50')}
-                >
-                  <div className="flex items-center gap-2 mb-1">
+                <div key={c.id} className="px-6 py-4">
+                  <div className="flex items-center gap-2 mb-2">
                     {c.isInternal && <Lock className="h-3 w-3 text-yellow-600" />}
-                    <span className="text-xs font-medium text-gray-700">{c.author?.name ?? 'Usuário'}</span>
-                    <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">{formatDate(c.createdAt)}</span>
-                    {c.isInternal && <span className="text-xs text-yellow-700 font-medium">Nota interna</span>}
+                    <span className="text-xs font-medium text-foreground">{c.author?.name ?? 'Usuário'}</span>
+                    <span className="text-xs text-muted-foreground">·</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</span>
+                    {c.isInternal && <span className="text-xs text-yellow-600 font-medium">Nota interna</span>}
                   </div>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.body}</p>
+                  <div className={cn(
+                    'rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap',
+                    c.isInternal
+                      ? 'bg-yellow-50 dark:bg-yellow-900/20 text-foreground'
+                      : c.author?.id === ticket.assignedToId
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-foreground'
+                        : 'bg-muted text-foreground'
+                  )}>
+                    {c.body}
+                  </div>
                 </div>
               ))}
               {(ticket.comments || []).length === 0 && (
-                <p className="px-6 py-4 text-sm text-gray-400">Nenhum comentário.</p>
+                <p className="px-6 py-4 text-sm text-muted-foreground">Nenhum comentário.</p>
               )}
             </div>
 
             {/* Formulário de comentário */}
-            <form onSubmit={handleCommentSubmit} className="px-6 py-4 border-t space-y-3">
+            <form onSubmit={handleCommentSubmit} className="px-6 py-4 border-t border-border space-y-3">
               <Textarea
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
@@ -222,7 +228,7 @@ export default function TicketDetailPage() {
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
                   {permissions.has('view_internal_notes') && (
-                    <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-sm cursor-pointer text-foreground">
                       <input
                         type="checkbox"
                         checked={isInternal}
@@ -231,7 +237,7 @@ export default function TicketDetailPage() {
                       Nota interna
                     </label>
                   )}
-                  <label className="flex items-center gap-1.5 text-sm cursor-pointer text-gray-600 hover:text-gray-900">
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer text-muted-foreground hover:text-foreground">
                     <Paperclip className="h-4 w-4" />
                     Anexar arquivo
                     <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
@@ -246,14 +252,14 @@ export default function TicketDetailPage() {
 
           {/* Anexos */}
           {(ticket.attachments || []).length > 0 && (
-            <div className="bg-white border rounded-lg">
-              <div className="px-6 py-4 border-b font-medium text-sm">Anexos</div>
-              <div className="divide-y">
+            <div className="bg-card border border-border rounded-xl">
+              <div className="px-6 py-4 border-b bg-muted/40 font-medium text-sm text-foreground">Anexos</div>
+              <div className="divide-y divide-border">
                 {ticket.attachments.map((a) => (
                   <div key={a.id} className="px-6 py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{a.fileName}</p>
-                      <p className="text-xs text-gray-400">{formatDate(a.createdAt)}</p>
+                      <p className="text-sm font-medium text-foreground">{a.fileName}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(a.createdAt)}</p>
                     </div>
                     <button
                       type="button"
@@ -276,30 +282,30 @@ export default function TicketDetailPage() {
           )}
 
           {/* Timeline */}
-          <div className="bg-white border rounded-lg">
+          <div className="bg-card border border-border rounded-xl">
             <button
               onClick={() => setTimelineOpen((v) => !v)}
-              className="w-full px-6 py-4 flex items-center justify-between text-sm font-medium hover:bg-gray-50"
+              className="w-full px-6 py-4 flex items-center justify-between text-sm font-medium hover:bg-muted/40 transition-colors text-foreground"
             >
               <span>Timeline de eventos</span>
               {timelineOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {timelineOpen && (
-              <div className="border-t divide-y">
+              <div className="border-t border-border divide-y divide-border">
                 {(ticket.timeLogs || []).map((log) => (
                   <div key={log.id} className="px-6 py-3 flex gap-3">
-                    <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5 shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground mt-1.5 shrink-0" />
                     <div>
-                      <p className="text-sm text-gray-800">
+                      <p className="text-sm text-foreground">
                         {EVENT_LABELS[log.eventType] || log.eventType}
                         {log.toStatus && ` → ${STATUS_LABELS[log.toStatus] || log.toStatus}`}
                       </p>
-                      <p className="text-xs text-gray-400">{timeAgo(log.occurredAt)} · {formatDate(log.occurredAt)}</p>
+                      <p className="text-xs text-muted-foreground">{timeAgo(log.occurredAt)} · {formatDate(log.occurredAt)}</p>
                     </div>
                   </div>
                 ))}
                 {(ticket.timeLogs || []).length === 0 && (
-                  <p className="px-6 py-4 text-sm text-gray-400">Sem eventos.</p>
+                  <p className="px-6 py-4 text-sm text-muted-foreground">Sem eventos.</p>
                 )}
               </div>
             )}
@@ -308,16 +314,16 @@ export default function TicketDetailPage() {
 
         {/* Painel lateral de campos */}
         <aside className="w-full md:w-72 shrink-0">
-          <div className="bg-white border rounded-lg p-5 space-y-4 text-sm">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4 text-sm">
 
             {/* Status */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">STATUS</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Status</p>
               {allowedTransitions.length > 0 ? (
                 <select
                   value={ticket.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
-                  className="border rounded-md px-2 py-1.5 text-sm w-full"
+                  className="border border-border rounded-md px-2 py-1.5 text-sm w-full bg-background text-foreground"
                 >
                   <option value={ticket.status} disabled>{STATUS_LABELS[ticket.status]}</option>
                   {allowedTransitions.map((s) => (
@@ -325,7 +331,7 @@ export default function TicketDetailPage() {
                   ))}
                 </select>
               ) : (
-                <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[ticket.status])}>
+                <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[ticket.status])}>
                   {STATUS_LABELS[ticket.status]}
                 </span>
               )}
@@ -345,40 +351,42 @@ export default function TicketDetailPage() {
 
             {/* Atribuído a */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">ATRIBUÍDO A</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Atribuído a</p>
               {permissions.has('reassign_tickets') ? (
                 <select
                   value={ticket.assignedToId || ''}
                   onChange={handleAssigneeChange}
-                  className="border rounded-md px-2 py-1.5 text-sm w-full"
+                  className="border border-border rounded-md px-2 py-1.5 text-sm w-full bg-background text-foreground"
                 >
                   <option value="">— Não atribuído —</option>
                   {pickerUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               ) : (
-                <p className="text-gray-700">{ticket.assignedTo?.name ?? '— Não atribuído —'}</p>
+                <p className="text-foreground">{ticket.assignedTo?.name ?? '— Não atribuído —'}</p>
               )}
             </div>
 
-            {/* Campos de leitura */}
-            {[
-              { label: 'SOLICITANTE', value: ticket.requester?.name ?? '—' },
-              { label: 'SETOR', value: ticket.sector?.name ?? '—' },
-              { label: 'URGÊNCIA', value: URGENCY_LABELS[ticket.urgency] },
-              { label: 'CRIADO EM', value: formatDate(ticket.createdAt) },
-              { label: 'RESOLVIDO EM', value: ticket.resolvedAt ? formatDate(ticket.resolvedAt) : '—' },
-              { label: 'FECHADO EM', value: ticket.closedAt ? formatDate(ticket.closedAt) : '—' },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <p className="text-xs font-medium text-gray-500 mb-0.5">{label}</p>
-                <p className="text-gray-700">{value}</p>
-              </div>
-            ))}
+            {/* Campos de leitura — grid 2 colunas */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Solicitante', value: ticket.requester?.name ?? '—' },
+                { label: 'Setor', value: ticket.sector?.name ?? '—' },
+                { label: 'Urgência', value: URGENCY_LABELS[ticket.urgency] },
+                { label: 'Criado em', value: formatDate(ticket.createdAt) },
+                { label: 'Resolvido em', value: ticket.resolvedAt ? formatDate(ticket.resolvedAt) : '—' },
+                { label: 'Fechado em', value: ticket.closedAt ? formatDate(ticket.closedAt) : '—' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-foreground text-xs">{value}</p>
+                </div>
+              ))}
+            </div>
 
             {/* Custo estimado */}
             {fieldVisible('estimated_cost') && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">CUSTO ESTIMADO (R$)</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Custo estimado (R$)</p>
                 {permissions.has('update_cost') ? (
                   <Input
                     type="number"
@@ -390,7 +398,7 @@ export default function TicketDetailPage() {
                     className="h-8 text-sm"
                   />
                 ) : (
-                  <p className="text-gray-700">
+                  <p className="text-foreground">
                     {ticket.estimatedCost ? `R$ ${Number(ticket.estimatedCost).toFixed(2)}` : '—'}
                   </p>
                 )}

@@ -8,12 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO', 'RESOLVIDO', 'FECHADO']
 
-const STATUS_BG = {
-  ABERTO: 'bg-blue-50 border-blue-200',
-  EM_ANDAMENTO: 'bg-purple-50 border-purple-200',
-  AGUARDANDO: 'bg-orange-50 border-orange-200',
-  RESOLVIDO: 'bg-green-50 border-green-200',
-  FECHADO: 'bg-gray-50 border-gray-200',
+const STATUS_BORDER = {
+  ABERTO:       'border-l-blue-500',
+  EM_ANDAMENTO: 'border-l-purple-500',
+  AGUARDANDO:   'border-l-orange-500',
+  RESOLVIDO:    'border-l-green-500',
+  FECHADO:      'border-l-slate-400',
 }
 
 export default function DashboardPage() {
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
 
       {/* Cards de status */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -81,13 +81,19 @@ export default function DashboardPage() {
             <button
               key={status}
               onClick={() => navigate(`/tickets?status=${status}`)}
-              className={cn('border rounded-lg p-4 text-left hover:shadow-sm transition-shadow', STATUS_BG[status])}
+              className={cn(
+                'bg-card border border-border border-l-4 rounded-xl p-5 text-left hover:shadow-md transition-shadow',
+                STATUS_BORDER[status]
+              )}
             >
-              <p className="text-xs font-medium text-gray-500 mb-1">{STATUS_LABELS[status]}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {STATUS_LABELS[status]}
+              </p>
               {q.isLoading
-                ? <Skeleton className="h-6 w-12" />
-                : <p className="text-2xl font-bold text-gray-800">{q.data?.total ?? '—'}</p>
+                ? <Skeleton className="h-8 w-16" />
+                : <p className="text-3xl font-bold text-foreground">{q.data?.total ?? '—'}</p>
               }
+              <p className="text-xs text-muted-foreground mt-1">chamados</p>
             </button>
           )
         })}
@@ -97,8 +103,8 @@ export default function DashboardPage() {
       {(showMyTickets || showSlaAlerts) ? (
         <div className="grid md:grid-cols-2 gap-6">
           {showMyTickets && (
-            <div className="bg-white border rounded-lg">
-              <div className="px-5 py-3 border-b font-medium text-sm flex items-center justify-between">
+            <div className="bg-card border border-border rounded-xl">
+              <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
                 <span>Meus chamados abertos</span>
                 <button
                   onClick={() => navigate(`/tickets?assignedToId=${user?.id}`)}
@@ -110,22 +116,22 @@ export default function DashboardPage() {
               {loadingMy
                 ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
                 : myTickets.length === 0
-                  ? <p className="px-5 py-4 text-sm text-gray-400">Nenhum chamado aberto atribuído a você.</p>
+                  ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado aberto atribuído a você.</p>
                   : (
                     <table className="w-full text-sm">
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-border">
                         {myTickets.map(t => (
-                          <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-gray-50 cursor-pointer">
-                            <td className="px-4 py-2 font-mono text-gray-400 text-xs">{formatTicketId(t.id)}</td>
-                            <td className="px-4 py-2 max-w-[160px] truncate font-medium">{t.title}</td>
+                          <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-muted/40 cursor-pointer transition-colors">
+                            <td className="px-4 py-2 font-mono text-muted-foreground text-xs">{formatTicketId(t.id)}</td>
+                            <td className="px-4 py-2 max-w-[160px] truncate font-medium text-foreground">{t.title}</td>
                             <td className="px-4 py-2">
-                              <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', STATUS_COLORS[t.status])}>
+                              <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
                                 {STATUS_LABELS[t.status]}
                               </span>
                             </td>
                             {t.slaBadge && (
                               <td className="px-4 py-2">
-                                <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
+                                <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
                                   {SLA_BADGE_LABELS[t.slaBadge]}
                                 </span>
                               </td>
@@ -140,8 +146,8 @@ export default function DashboardPage() {
           )}
 
           {showSlaAlerts && (
-            <div className="bg-white border rounded-lg">
-              <div className="px-5 py-3 border-b font-medium text-sm flex items-center justify-between">
+            <div className="bg-card border border-border rounded-xl">
+              <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
                 <span>Alertas de SLA crítico</span>
                 <button onClick={() => navigate('/tickets')} className="text-xs text-blue-600 hover:underline">
                   Ver todos
@@ -150,16 +156,16 @@ export default function DashboardPage() {
               {loadingSla
                 ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
                 : slaAlerts.length === 0
-                  ? <p className="px-5 py-4 text-sm text-gray-400">Nenhum chamado com SLA crítico.</p>
+                  ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado com SLA crítico.</p>
                   : (
-                    <div className="divide-y">
+                    <div className="divide-y divide-border">
                       {slaAlerts.map(t => (
-                        <div key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="px-5 py-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2">
+                        <div key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="px-5 py-3 hover:bg-muted/40 cursor-pointer flex items-center justify-between gap-2 transition-colors">
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{t.title}</p>
-                            <p className="text-xs text-gray-400">{formatTicketId(t.id)} · {formatDate(t.slaResolutionDeadline)}</p>
+                            <p className="font-medium text-sm truncate text-foreground">{t.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatTicketId(t.id)} · {formatDate(t.slaResolutionDeadline)}</p>
                           </div>
-                          <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-xs font-medium', URGENCY_COLORS[t.urgency])}>
+                          <span className={cn('shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
                             {URGENCY_LABELS[t.urgency]}
                           </span>
                         </div>
@@ -171,26 +177,26 @@ export default function DashboardPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white border rounded-lg">
-          <div className="px-5 py-3 border-b font-medium text-sm">Meus chamados abertos</div>
+        <div className="bg-card border border-border rounded-xl">
+          <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm">Meus chamados abertos</div>
           {loadingRequester
             ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
             : requesterTickets.length === 0
-              ? <p className="px-5 py-4 text-sm text-gray-400">Nenhum chamado aberto.</p>
+              ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado aberto.</p>
               : (
                 <table className="w-full text-sm">
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-border">
                     {requesterTickets.map(t => (
-                      <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-gray-50 cursor-pointer">
-                        <td className="px-4 py-2 font-mono text-gray-400 text-xs">{formatTicketId(t.id)}</td>
-                        <td className="px-4 py-2 font-medium">{t.title}</td>
+                      <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-muted/40 cursor-pointer transition-colors">
+                        <td className="px-4 py-2 font-mono text-muted-foreground text-xs">{formatTicketId(t.id)}</td>
+                        <td className="px-4 py-2 font-medium text-foreground">{t.title}</td>
                         <td className="px-4 py-2">
-                          <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', STATUS_COLORS[t.status])}>
+                          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
                             {STATUS_LABELS[t.status]}
                           </span>
                         </td>
                         <td className="px-4 py-2">
-                          <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', URGENCY_COLORS[t.urgency])}>
+                          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
                             {URGENCY_LABELS[t.urgency]}
                           </span>
                         </td>

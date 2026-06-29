@@ -85,11 +85,11 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="text-xl font-semibold">Meu Perfil</h1>
+      <h1 className="text-xl font-semibold text-foreground">Meu Perfil</h1>
 
       {/* Dados pessoais */}
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <h2 className="font-medium text-sm text-gray-700">Dados pessoais</h2>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium text-sm text-foreground">Dados pessoais</h2>
         <form onSubmit={handleSaveName} className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">Nome</label>
@@ -100,7 +100,7 @@ export default function ProfilePage() {
             <Input
               value={user?.email ?? ''}
               readOnly
-              className="bg-gray-50 text-gray-500 cursor-not-allowed"
+              className="bg-muted text-muted-foreground cursor-not-allowed"
             />
           </div>
           <Button type="submit" disabled={savingName || !name.trim()}>
@@ -110,8 +110,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Alterar senha */}
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <h2 className="font-medium text-sm text-gray-700">Alterar senha</h2>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium text-sm text-foreground">Alterar senha</h2>
         <form onSubmit={handleSavePassword} className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">Senha atual</label>
@@ -149,14 +149,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Alterar e-mail */}
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <h2 className="font-medium text-sm text-gray-700">Alterar e-mail</h2>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium text-sm text-foreground">Alterar e-mail</h2>
         {emailSent ? (
           <div className="space-y-2">
             <p className="text-sm text-green-700">
               Link enviado para <span className="font-medium">{newEmail}</span>. Verifique sua caixa de entrada.
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Em ambiente de desenvolvimento, o link aparece no console do servidor.
             </p>
             <button

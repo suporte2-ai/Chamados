@@ -64,7 +64,7 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">Painel de Desempenho</h1>
+        <h1 className="text-xl font-semibold text-foreground">Painel de Desempenho</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => handleDownload('csv')}>CSV</Button>
           <Button variant="outline" size="sm" onClick={() => handleDownload('pdf')}>PDF</Button>
@@ -72,7 +72,7 @@ export default function PerformancePage() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white border rounded-lg p-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap gap-3 items-end">
         <div className="flex gap-2">
           {['7d', '30d', '90d'].map(p => (
             <Button
@@ -86,11 +86,11 @@ export default function PerformancePage() {
           ))}
         </div>
         <input type="date" value={period.from} onChange={e => setPeriod(v => ({ ...v, from: e.target.value }))}
-          className="border rounded-md px-3 py-1.5 text-sm" />
+          className="border border-border rounded-md px-3 py-1.5 text-sm bg-background text-foreground" />
         <input type="date" value={period.to} onChange={e => setPeriod(v => ({ ...v, to: e.target.value }))}
-          className="border rounded-md px-3 py-1.5 text-sm" />
+          className="border border-border rounded-md px-3 py-1.5 text-sm bg-background text-foreground" />
         <select value={sectorId} onChange={e => setSectorId(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm">
+          className="border border-border rounded-md px-3 py-1.5 text-sm bg-background text-foreground">
           <option value="">Todos os setores</option>
           {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
@@ -98,7 +98,7 @@ export default function PerformancePage() {
 
       {/* Cards gerais */}
       {isLoading
-        ? <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}</div>
+        ? <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
         : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
@@ -106,9 +106,9 @@ export default function PerformancePage() {
               { label: 'Média 1ª resposta', value: formatMinutes(summary?.overall?.avgFirstResponseMinutes) },
               { label: 'Média resolução', value: formatMinutes(summary?.overall?.avgResolutionMinutes) },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-white border rounded-lg p-5">
-                <p className="text-xs text-gray-500 mb-1">{label}</p>
-                <p className="text-2xl font-bold">{value}</p>
+              <div key={label} className="bg-card border border-border rounded-xl p-5">
+                <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                <p className="text-2xl font-bold text-foreground">{value}</p>
               </div>
             ))}
           </div>
@@ -117,8 +117,8 @@ export default function PerformancePage() {
 
       {/* Gráfico de volume */}
       {volumeData.length > 0 && (
-        <div className="bg-white border rounded-lg p-5">
-          <p className="font-medium text-sm mb-4">Volume por dia</p>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <p className="font-medium text-sm mb-4 text-foreground">Volume por dia</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={volumeData}>
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
@@ -133,32 +133,32 @@ export default function PerformancePage() {
       )}
 
       {/* Tabela por técnico */}
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <div className="px-5 py-3 border-b font-medium text-sm">Por técnico</div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm text-foreground">Por técnico</div>
         {isLoading
           ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
           : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-muted/50 border-b">
                 <tr>
                   {['Nome', 'Setor', 'Chamados', 'Média 1ª resp.', 'Média resolução', 'Taxa SLA'].map(h => (
-                    <th key={h} className="px-4 py-2 text-left font-medium text-gray-600 text-xs">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left font-medium text-muted-foreground text-xs">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-border">
                 {(summary?.byUser || []).map(u => (
-                  <tr key={u.userId} onClick={() => setDrillUser(u.userId)} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-4 py-2 font-medium">{u.userName}</td>
-                    <td className="px-4 py-2 text-gray-500">{u.sectorName || '—'}</td>
-                    <td className="px-4 py-2">{u.totalTickets}</td>
-                    <td className="px-4 py-2">{formatMinutes(u.avgFirstResponseMinutes)}</td>
-                    <td className="px-4 py-2">{formatMinutes(u.avgResolutionMinutes)}</td>
-                    <td className="px-4 py-2">{u.slaComplianceRate != null ? `${(u.slaComplianceRate * 100).toFixed(0)}%` : '—'}</td>
+                  <tr key={u.userId} onClick={() => setDrillUser(u.userId)} className="hover:bg-muted/40 cursor-pointer transition-colors">
+                    <td className="px-4 py-2 font-medium text-foreground">{u.userName}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{u.sectorName || '—'}</td>
+                    <td className="px-4 py-2 text-foreground">{u.totalTickets}</td>
+                    <td className="px-4 py-2 text-foreground">{formatMinutes(u.avgFirstResponseMinutes)}</td>
+                    <td className="px-4 py-2 text-foreground">{formatMinutes(u.avgResolutionMinutes)}</td>
+                    <td className="px-4 py-2 text-foreground">{u.slaComplianceRate != null ? `${(u.slaComplianceRate * 100).toFixed(0)}%` : '—'}</td>
                   </tr>
                 ))}
                 {(summary?.byUser || []).length === 0 && (
-                  <tr><td colSpan="6" className="px-4 py-6 text-center text-gray-400">Sem dados no período.</td></tr>
+                  <tr><td colSpan="6" className="px-4 py-6 text-center text-muted-foreground">Sem dados no período.</td></tr>
                 )}
               </tbody>
             </table>
@@ -168,33 +168,33 @@ export default function PerformancePage() {
 
       {/* Drilldown modal */}
       {drillUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <span className="font-semibold">{drillData?.user?.name ?? 'Carregando...'}</span>
-              <button onClick={() => setDrillUser(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <span className="font-semibold text-foreground">{drillData?.user?.name ?? 'Carregando...'}</span>
+              <button onClick={() => setDrillUser(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">&times;</button>
             </div>
             {loadingDrill
               ? <div className="p-6"><Skeleton className="h-40 w-full" /></div>
               : drillData && (
                 <div className="p-6 space-y-4">
                   <div className="grid grid-cols-3 gap-4">
-                    <div><p className="text-xs text-gray-500">Chamados</p><p className="font-bold text-lg">{drillData.metrics.totalTickets}</p></div>
-                    <div><p className="text-xs text-gray-500">Média 1ª resp.</p><p className="font-bold text-lg">{formatMinutes(drillData.metrics.avgFirstResponseMinutes)}</p></div>
-                    <div><p className="text-xs text-gray-500">Média resolução</p><p className="font-bold text-lg">{formatMinutes(drillData.metrics.avgResolutionMinutes)}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Chamados</p><p className="font-bold text-lg text-foreground">{drillData.metrics.totalTickets}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Média 1ª resp.</p><p className="font-bold text-lg text-foreground">{formatMinutes(drillData.metrics.avgFirstResponseMinutes)}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Média resolução</p><p className="font-bold text-lg text-foreground">{formatMinutes(drillData.metrics.avgResolutionMinutes)}</p></div>
                   </div>
-                  <table className="w-full text-sm border rounded-lg overflow-hidden">
-                    <thead className="bg-gray-50"><tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Título</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">SLA</th>
+                  <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+                    <thead className="bg-muted/50"><tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Título</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">SLA</th>
                     </tr></thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-border">
                       {drillData.tickets.map(t => (
                         <tr key={t.id}>
-                          <td className="px-3 py-2 font-medium">{t.title}</td>
-                          <td className="px-3 py-2 text-gray-500">{t.status}</td>
-                          <td className="px-3 py-2">{t.slaBadge || '—'}</td>
+                          <td className="px-3 py-2 font-medium text-foreground">{t.title}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{t.status}</td>
+                          <td className="px-3 py-2 text-foreground">{t.slaBadge || '—'}</td>
                         </tr>
                       ))}
                     </tbody>

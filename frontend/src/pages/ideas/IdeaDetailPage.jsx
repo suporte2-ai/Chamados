@@ -89,7 +89,7 @@ export default function IdeaDetailPage() {
   if (isError || !idea) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-500">Ideia não encontrada.</p>
+        <p className="text-muted-foreground">Ideia não encontrada.</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate('/ideas')}>Voltar</Button>
       </div>
     )
@@ -99,45 +99,45 @@ export default function IdeaDetailPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="bg-white border rounded-lg p-6 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex-1">
-            <h1 className="text-xl font-semibold">{idea.title}</h1>
-            {idea.authorName && <p className="text-sm text-gray-400 mt-0.5">por {idea.authorName}</p>}
+            <h1 className="text-xl font-bold text-foreground">{idea.title}</h1>
+            {idea.authorName && <p className="text-sm text-muted-foreground mt-0.5">por {idea.authorName}</p>}
           </div>
           <span className={cn('px-2.5 py-1 rounded-full text-xs font-medium', IDEA_STATUS_COLORS[idea.status])}>
             {IDEA_STATUS_LABELS[idea.status]}
           </span>
         </div>
 
-        <div className="space-y-3 text-sm text-gray-700">
+        <div className="space-y-3 text-sm text-foreground">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase mb-0.5">Descrição</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Descrição</p>
             <p className="whitespace-pre-wrap">{idea.description}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase mb-0.5">Área impactada</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Área impactada</p>
             <p>{idea.areaImpacted}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase mb-0.5">Benefício esperado</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Benefício esperado</p>
             <p className="whitespace-pre-wrap">{idea.expectedBenefit}</p>
           </div>
           {idea.managerNote && (
-            <div className="bg-blue-50 border border-blue-100 rounded p-3">
-              <p className="text-xs font-medium text-blue-600 mb-0.5">Nota do gestor</p>
-              <p className="text-blue-800">{idea.managerNote}</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-0.5">Nota do gestor</p>
+              <p className="text-blue-800 dark:text-blue-200">{idea.managerNote}</p>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3 pt-2 border-t">
+        <div className="flex items-center gap-3 pt-2 border-t border-border">
           <button
             onClick={() => voteMutation.mutate()}
             disabled={idea.status !== 'EM_ANALISE' || voteMutation.isPending}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
-              idea.userHasVoted ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50',
+              idea.userHasVoted ? 'bg-blue-600 text-white border-blue-600' : 'border-border text-muted-foreground hover:bg-muted/40',
               idea.status !== 'EM_ANALISE' && 'opacity-40 cursor-not-allowed'
             )}
           >
@@ -152,18 +152,18 @@ export default function IdeaDetailPage() {
       </div>
 
       {canManage && transitions.length > 0 && (
-        <div className="bg-white border rounded-lg p-6 space-y-3">
-          <p className="font-medium text-sm">Atualizar status</p>
+        <div className="bg-card border border-border rounded-xl p-6 space-y-3">
+          <p className="font-medium text-sm text-foreground">Atualizar status</p>
           <select
             value={newStatus}
             onChange={e => setNewStatus(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm w-full"
+            className="border border-border rounded-md px-3 py-2 text-sm w-full bg-background text-foreground"
           >
             <option value="">Selecione o novo status...</option>
             {transitions.map(s => <option key={s} value={s}>{IDEA_STATUS_LABELS[s]}</option>)}
           </select>
           <div>
-            <label className="block text-sm font-medium mb-1">Nota do gestor (opcional)</label>
+            <label className="block text-sm font-medium mb-1 text-foreground">Nota do gestor (opcional)</label>
             <Textarea
               value={managerNote}
               onChange={e => setManagerNote(e.target.value)}
@@ -178,19 +178,19 @@ export default function IdeaDetailPage() {
       )}
 
       {/* Comentários */}
-      <div className="bg-white border rounded-lg p-6 space-y-4">
-        <p className="font-medium text-sm">Comentários ({(idea.comments || []).length})</p>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <p className="font-medium text-sm text-foreground">Comentários ({(idea.comments || []).length})</p>
 
         {(idea.comments || []).length === 0 ? (
-          <p className="text-sm text-gray-400">Seja o primeiro a comentar.</p>
+          <p className="text-sm text-muted-foreground">Seja o primeiro a comentar.</p>
         ) : (
-          <div className="divide-y border rounded-lg">
+          <div className="divide-y divide-border border border-border rounded-lg">
             {(idea.comments || []).map((c) => (
               <div key={c.id} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-700">{c.author?.name ?? 'Usuário'}</span>
+                  <span className="text-xs font-medium text-foreground">{c.author?.name ?? 'Usuário'}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground">{timeAgo(c.createdAt)}</span>
                     {c.author?.id === user?.id && (
                       <button
                         onClick={() => deleteCommentMutation.mutate(c.id)}
@@ -202,7 +202,7 @@ export default function IdeaDetailPage() {
                     )}
                   </div>
                 </div>
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.body}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{c.body}</p>
               </div>
             ))}
           </div>
