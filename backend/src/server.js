@@ -15,6 +15,7 @@ const performanceRoutes = require('./modules/performance/performance.routes');
 const ideasRoutes = require('./modules/ideas/ideas.routes');
 const notificationsRoutes = require('./modules/notifications/notifications.routes');
 const eventsRoutes = require('./modules/events/events.routes');
+const searchRoutes = require('./modules/search/search.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api', performanceRoutes);
 app.use('/api', ideasRoutes);
 app.use('/api', notificationsRoutes);
 app.use('/api', eventsRoutes);
+app.use('/api', searchRoutes);
 
 app.use(errorHandler);
 
