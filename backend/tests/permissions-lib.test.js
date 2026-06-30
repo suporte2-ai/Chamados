@@ -34,3 +34,7 @@ test('exposes the new ticket-visibility permission keys', () => {
   expect(PERMISSION_KEYS).toContain('view_all_tickets');
   expect(PERMISSION_KEYS).toContain('view_sector_tickets');
 });
+
+test('PERMISSION_KEYS inclui manage_events', () => {
+  expect(PERMISSION_KEYS).toContain('manage_events');
+});

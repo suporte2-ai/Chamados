@@ -113,6 +113,8 @@ async function clearDatabase() {
   await prisma.category.deleteMany();
   await prisma.slaConfig.deleteMany();
   await prisma.passwordResetToken.deleteMany();
+  await prisma.eventAttendee.deleteMany();
+  await prisma.event.deleteMany();
   await prisma.user.deleteMany();
   await prisma.sector.deleteMany();
   await prisma.rolePermission.deleteMany();
@@ -140,6 +142,7 @@ async function seedRolesAndPermissions() {
       'view_all_tickets',
       'update_cost',
       'manage_ideas',
+      'manage_events',
     ],
     [tecnico.id]: ['view_internal_notes', 'reopen_tickets', 'view_own_metrics', 'view_sector_tickets'],
     [usuarioFinal.id]: [],

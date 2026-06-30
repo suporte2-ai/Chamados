@@ -14,6 +14,7 @@ const PERMISSION_KEYS = [
   'view_sector_tickets',
   'update_cost',
   'manage_ideas',
+  'manage_events',
 ];
 
 const FIELD_KEYS = ['assigned_to', 'estimated_cost', 'internal_notes', 'sla_badge'];
