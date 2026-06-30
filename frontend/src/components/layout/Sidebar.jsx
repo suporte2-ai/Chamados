@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
-import { Ticket, PlusCircle, X, LayoutDashboard, BarChart2, Lightbulb, Settings, ChevronDown, ChevronUp } from 'lucide-react'
+import { Ticket, PlusCircle, X, LayoutDashboard, BarChart2, Lightbulb, Settings, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
 
@@ -46,6 +46,7 @@ function SidebarContent({ onClose }) {
       <NavItem to="/tickets" icon={Ticket} label="Chamados" exact onClick={onClose} />
       <NavItem to="/tickets/new" icon={PlusCircle} label="Novo Chamado" onClick={onClose} />
       <NavItem to="/ideas" icon={Lightbulb} label="Ideias" onClick={onClose} />
+      <NavItem to="/agenda" icon={Calendar} label="Agenda" onClick={onClose} />
       {permissions.has('view_performance_panel') && (
         <NavItem to="/performance" icon={BarChart2} label="Desempenho" onClick={onClose} />
       )}
