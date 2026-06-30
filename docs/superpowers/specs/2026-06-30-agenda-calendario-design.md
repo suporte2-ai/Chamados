@@ -13,7 +13,7 @@ Inalteradas das fases anteriores:
 - **Backend:** Node.js + Express + Prisma + PostgreSQL, porta 4000
 - **Frontend:** React 18, Vite 5, Tailwind CSS 3, shadcn/ui, React Router v6, Zustand 4, TanStack Query v5, Axios 1
 - **Auth:** JWT access token em variável de módulo, refresh via cookie httpOnly
-- **Notificações:** `notificationService.create()` existente em `backend/src/lib/notificationService.js`
+- **Notificações:** função privada `notify()` em `backend/src/lib/notificationService.js` — o cron adiciona duas funções exportadas novas (`notifyEventReminder`, `notifyEventCancelled`) seguindo o padrão existente do módulo
 - **Nova dependência backend:** `node-cron` (cron job diário)
 
 ## 3. Modelo de Dados
@@ -66,7 +66,7 @@ model EventAttendee {
 
 ```prisma
 // User
-eventsCreated EventAttendee[]
+eventsCreated  Event[]         @relation("EventsCreated")
 eventAttendees EventAttendee[]
 
 // Sector
@@ -82,15 +82,17 @@ events Event[]
 
 ## 4. Permissão
 
-Nova chave em `PERMISSION_KEYS`:
+Nova chave adicionada ao objeto literal `PERMISSION_KEYS` em `backend/src/lib/permissions.js`:
 
 ```js
 manage_events: 'manage_events'
 ```
 
-Atribuída no seed a:
-- `Admin` — todas as permissões (já existente)
-- `Gestor` — adicionada junto com as demais permissões de gestor
+Adicionada à `rolePermissionMatrix` no `backend/prisma/seed.js` para:
+- `Admin` — já recebe todas as permissões via `allPermissionKeys`
+- `Gestor` — adicionada explicitamente no array do Gestor junto com as demais permissões existentes
+
+> **Importante:** O seed itera sobre `PERMISSION_KEYS` para criar as linhas `role_permissions`. Se `manage_events` não estiver em `PERMISSION_KEYS`, a entrada não é criada para nenhum role. Ambos os lugares devem ser atualizados.
 
 ## 5. API Backend
 
@@ -124,8 +126,8 @@ Módulo em `backend/src/modules/events/` com `events.controller.js` e `events.ro
 ```
 
 - Quando `scope='EMPRESA'`: busca todos os usuários ativos e cria `EventAttendee` para cada um
-- Quando `scope='SETOR'`: busca todos os usuários do setor e cria `EventAttendee` para cada um
-- Quando `scope='USUARIO'`: cria `EventAttendee` para cada `userId` em `userIds`
+- Quando `scope='SETOR'`: busca usuários cujo **`User.sectorId` principal** corresponde ao `sectorId` do evento (não inclui vínculos secundários via `UserSector`)
+- Quando `scope='USUARIO'`: cria `EventAttendee` para cada `userId` em `userIds` — **`userIds` deve ter ao menos 1 elemento** (validação 422 se vazio)
 - Após criar os attendees, envia `Notification` imediata de convocação para cada participante
 
 **Response 201:**
@@ -166,6 +168,8 @@ Admins podem editar qualquer evento. Gestores só podem editar eventos que criar
 
 Campos editáveis: `title`, `description`, `location`, `startAt`, `endAt`.
 
+**Quando `startAt` ou `endAt` for alterado**, o controller deve resetar `notified3d = false` e `notified1d = false` em todos os `EventAttendee` do evento via `updateMany`, garantindo que os lembretes sejam reenviados para a nova data.
+
 ### DELETE /api/events/:id
 
 Remove o evento e todos os `EventAttendee` (cascade). Envia notificação de cancelamento para cada participante.
@@ -198,17 +202,33 @@ const attendees3d = await prisma.eventAttendee.findMany({
 });
 
 for (const a of attendees3d) {
-  await notificationService.create(a.userId, {
-    type: 'EVENT_REMINDER',
-    message: `Lembrete: "${a.event.title}" em 3 dias — ${formatDate(a.event.startAt)}`
-  });
-  await prisma.eventAttendee.update({ where: { id: a.id }, data: { notified3d: true } });
+  try {
+    // Marcar flag ANTES de notificar: se o evento foi deletado (cascade),
+    // o update lança P2025 e a notificação não é enviada.
+    await prisma.eventAttendee.update({ where: { id: a.id }, data: { notified3d: true } });
+    await notifyEventReminder(a.userId, a.event, 3);
+  } catch (err) {
+    // P2025 = attendee deletado por cascade (evento cancelado) — ignorar silenciosamente
+    if (err.code !== 'P2025') console.error('eventCron 3d error:', err);
+  }
 }
 
 // Lembrete de 1 dia (mesmo padrão, usando in1day, notified1d)
 ```
 
-O cron é iniciado em `backend/src/server.js` após a conexão com o banco.
+**Funções a adicionar em `notificationService.js`** (seguindo o padrão existente):
+```js
+async function notifyEventReminder(userId, event, daysAhead) { ... }
+async function notifyEventCancelled(userId, event) { ... }
+```
+
+**Registro do cron em `server.js`:** dentro do bloco `if (require.main === module)`, após `app.listen`, para não disparar durante testes que importam o módulo:
+```js
+if (require.main === module) {
+  app.listen(PORT, () => { ... });
+  require('./lib/eventNotificationCron').start();
+}
+```
 
 ## 7. Frontend
 
@@ -247,10 +267,10 @@ export const eventsApi = {
 
 - Grade 7×6 com o mês atual
 - Navegação `< Mês Ano >` para mês anterior/próximo
-- Dias com eventos marcados com um ponto colorido:
-  - Verde: todos os eventos com RSVP CONFIRMADO
-  - Amarelo/laranja: algum evento PENDENTE
-  - Cinza: eventos RECUSADOS
+- Dias com eventos marcados com um ponto colorido (precedência aplicada nesta ordem):
+  1. **Amarelo/laranja** — qualquer evento do dia com RSVP `PENDENTE`
+  2. **Verde** — todos os eventos do dia com RSVP `CONFIRMADO` (nenhum PENDENTE)
+  3. **Cinza** — todos os eventos do dia com RSVP `RECUSADO` (nenhum PENDENTE, nenhum CONFIRMADO)
 - Clique no dia abre painel lateral (ou popover) com eventos do dia
 
 ### Visão Lista
