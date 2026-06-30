@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Sun, Moon } from 'lucide-react'
+import { Menu, Sun, Moon, Search } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,9 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import NotificationBell from './NotificationBell'
 import { useAuth } from '@/hooks/useAuth'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 const BREADCRUMBS = {
   '/tickets': 'Chamados',
@@ -25,14 +25,11 @@ function getBreadcrumb(pathname) {
   return 'Helpdesk'
 }
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, onSearchClick }) {
   const location = useLocation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
-  const initials = user?.name
-    ? user.name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
-    : '?'
 
   return (
     <header className="h-16 flex items-center justify-between px-4 border-b bg-background shrink-0">
@@ -45,6 +42,19 @@ export default function Header({ onMenuClick }) {
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
+          size="sm"
+          onClick={onSearchClick}
+          className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs px-3"
+        >
+          <Search className="h-4 w-4" />
+          <span>Buscar</span>
+          <kbd className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px] ml-1">Ctrl+K</kbd>
+        </Button>
+        <Button variant="ghost" size="icon" className="sm:hidden" onClick={onSearchClick}>
+          <Search className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title="Alternar tema"
@@ -55,9 +65,7 @@ export default function Header({ onMenuClick }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user} size="sm" />
               <span className="hidden sm:block text-sm">{user?.name}</span>
             </Button>
           </DropdownMenuTrigger>
