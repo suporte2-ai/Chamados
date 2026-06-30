@@ -46,4 +46,27 @@ async function markRead(req, res) {
   res.json(updated);
 }
 
-module.exports = { list, markAllRead, markRead };
+const sse = require('../../lib/sseConnections');
+
+async function stream(req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const userId = req.user.id;
+  sse.add(userId, res);
+
+  // Heartbeat a cada 25s para manter a conexão viva
+  const heartbeat = setInterval(() => {
+    try { res.write(':heartbeat\n\n'); } catch (_) {}
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sse.remove(userId, res);
+  });
+}
+
+module.exports = { list, markAllRead, markRead, stream };

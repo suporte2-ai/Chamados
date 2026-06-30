@@ -6,8 +6,10 @@ import Header from './Header'
 import CommandPalette from '@/components/CommandPalette'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useSSENotifications } from '@/hooks/useSSENotifications'
 
 export default function AppShell() {
+  useSSENotifications()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)

@@ -1,8 +1,10 @@
 const prisma = require('./prisma');
+const sse = require('./sseConnections');
 
 async function notify({ userId, type, message, link }) {
   if (!userId) return;
-  await prisma.notification.create({ data: { userId, type, message, link } });
+  const notification = await prisma.notification.create({ data: { userId, type, message, link } });
+  sse.push(notification.userId, 'notification', { type: notification.type });
 }
 
 async function notifyTicketAssigned(assigneeId, ticket) {
