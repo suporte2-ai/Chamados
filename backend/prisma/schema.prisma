@@ -52,6 +52,7 @@ model Sector {
   users       User[]
   tickets     Ticket[]
   userSectors UserSector[]
+  events      Event[]
 
   @@map("sectors")
 }
@@ -64,6 +65,7 @@ model User {
   roleId              Int
   sectorId            Int
   active              Boolean   @default(true)
+  avatarUrl           String?
   refreshTokenVersion Int       @default(0)
   lastLoginAt         DateTime?
   createdAt           DateTime  @default(now())
@@ -86,6 +88,9 @@ model User {
   notifications Notification[]
   emailChangeTokens EmailChangeToken[]
   userSectors       UserSector[]
+
+  eventsCreated  Event[]         @relation("EventsCreated")
+  eventAttendees EventAttendee[]
 
   @@map("users")
 }
@@ -341,4 +346,40 @@ model UserSector {
   @@unique([userId, sectorId])
   @@index([sectorId])
   @@map("user_sectors")
+}
+
+model Event {
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+  location    String?
+  startAt     DateTime
+  endAt       DateTime
+  scope       String
+  sectorId    Int?
+  sector      Sector?        @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  createdById Int
+  createdBy   User           @relation("EventsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
+  createdAt   DateTime       @default(now())
+
+  @@index([startAt])
+  @@index([sectorId])
+  @@map("events")
+}
+
+model EventAttendee {
+  id         Int      @id @default(autoincrement())
+  eventId    Int
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rsvp       String   @default("PENDENTE")
+  notified3d Boolean  @default(false)
+  notified1d Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@map("event_attendees")
 }
