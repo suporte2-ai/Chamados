@@ -1,13 +1,17 @@
 // frontend/src/components/layout/AppShell.jsx
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import CommandPalette from '@/components/CommandPalette'
+import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handler = (e) => {
@@ -19,6 +23,12 @@ export default function AppShell() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  useKeyboardShortcuts({
+    onOpenSearch: () => setPaletteOpen(true),
+    onNewTicket:  () => navigate('/tickets/new'),
+    onOpenHelp:   () => setShortcutsOpen(true),
+  })
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -33,6 +43,7 @@ export default function AppShell() {
         </main>
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   )
 }
