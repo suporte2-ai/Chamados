@@ -67,6 +67,7 @@ if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });
+  require('./lib/eventNotificationCron').start();
 }
 
 module.exports = app;
