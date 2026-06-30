@@ -36,3 +36,21 @@ test('handles null values without throwing', async () => {
   };
   await expect(generatePdf(nullSummary)).resolves.toBeInstanceOf(Buffer);
 });
+
+test('renders bar charts when byStatus and byUrgency are provided', async () => {
+  const richSummary = {
+    period: { from: '2026-06-01', to: '2026-06-25' },
+    overall: {
+      totalTickets: 10,
+      avgFirstResponseMinutes: 30,
+      avgResolutionMinutes: 120,
+      slaComplianceRate: 0.8,
+      byStatus:  { ABERTO: 3, EM_ANDAMENTO: 2, RESOLVIDO: 5 },
+      byUrgency: { CRITICO: 1, ALTO: 2, MEDIO: 3, BAIXO: 4 },
+    },
+    byUser: [],
+  };
+  const buffer = await generatePdf(richSummary);
+  expect(Buffer.isBuffer(buffer)).toBe(true);
+  expect(buffer.slice(0, 4).toString()).toBe('%PDF');
+});
