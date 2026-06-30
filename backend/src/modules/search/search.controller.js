@@ -13,10 +13,14 @@ async function search(req, res) {
   const [tickets, events, users] = await Promise.all([
     prisma.ticket.findMany({
       where: {
-        ...ticketVisibilityWhere(req.user),
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          ...(ticketIdMatch ? [{ id: ticketIdMatch }] : []),
+        AND: [
+          ticketVisibilityWhere(req.user),
+          {
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              ...(ticketIdMatch ? [{ id: ticketIdMatch }] : []),
+            ],
+          },
         ],
       },
       select: { id: true, title: true, status: true, urgency: true },
