@@ -77,32 +77,34 @@ export default function EventDetailModal({ event, onClose }) {
           <p className="text-sm text-foreground whitespace-pre-line">{event.description}</p>
         )}
 
-        <div className="border-t border-border pt-3 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Sua presença</p>
-          <div className="flex items-center gap-2">
-            <span className={cn('text-xs px-2 py-1 rounded-full font-medium', RSVP_COLORS[event.myRsvp ?? 'PENDENTE'])}>
-              {RSVP_LABELS[event.myRsvp ?? 'PENDENTE']}
-            </span>
+        {event.myRsvp !== null && (
+          <div className="border-t border-border pt-3 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Sua presença</p>
+            <div className="flex items-center gap-2">
+              <span className={cn('text-xs px-2 py-1 rounded-full font-medium', RSVP_COLORS[event.myRsvp ?? 'PENDENTE'])}>
+                {RSVP_LABELS[event.myRsvp ?? 'PENDENTE']}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={event.myRsvp === 'CONFIRMADO' ? 'default' : 'outline'}
+                onClick={() => rsvpMutation.mutate('CONFIRMADO')}
+                disabled={rsvpMutation.isPending}
+              >
+                Confirmar
+              </Button>
+              <Button
+                size="sm"
+                variant={event.myRsvp === 'RECUSADO' ? 'destructive' : 'outline'}
+                onClick={() => rsvpMutation.mutate('RECUSADO')}
+                disabled={rsvpMutation.isPending}
+              >
+                Recusar
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={event.myRsvp === 'CONFIRMADO' ? 'default' : 'outline'}
-              onClick={() => rsvpMutation.mutate('CONFIRMADO')}
-              disabled={rsvpMutation.isPending}
-            >
-              Confirmar
-            </Button>
-            <Button
-              size="sm"
-              variant={event.myRsvp === 'RECUSADO' ? 'destructive' : 'outline'}
-              onClick={() => rsvpMutation.mutate('RECUSADO')}
-              disabled={rsvpMutation.isPending}
-            >
-              Recusar
-            </Button>
-          </div>
-        </div>
+        )}
 
         {event.attendees && (
           <div className="border-t border-border pt-3 space-y-2">

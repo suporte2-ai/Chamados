@@ -40,19 +40,7 @@ async function create(req, res) {
     return res.status(422).json({ error: 'userIds deve ter ao menos 1 elemento quando scope=USUARIO.' });
   }
 
-  const event = await prisma.event.create({
-    data: {
-      title,
-      description: description ?? null,
-      location: location ?? null,
-      startAt: new Date(startAt),
-      endAt: new Date(endAt),
-      scope,
-      sectorId: scope === 'SETOR' ? Number(sectorId) : null,
-      createdById: req.user.id,
-    },
-  });
-
+  // Compute attendee list first (reads only, outside transaction)
   let attendeeUserIds = [];
   if (scope === 'EMPRESA') {
     const users = await prisma.user.findMany({ where: { active: true }, select: { id: true } });
@@ -64,14 +52,32 @@ async function create(req, res) {
     attendeeUserIds = userIds.map(Number);
   }
 
-  if (attendeeUserIds.length > 0) {
-    await prisma.eventAttendee.createMany({
-      data: attendeeUserIds.map(userId => ({ eventId: event.id, userId })),
-      skipDuplicates: true,
+  // Create event + attendees atomically so no orphan event row can exist
+  const event = await prisma.$transaction(async (tx) => {
+    const evt = await tx.event.create({
+      data: {
+        title,
+        description: description ?? null,
+        location: location ?? null,
+        startAt: new Date(startAt),
+        endAt: new Date(endAt),
+        scope,
+        sectorId: scope === 'SETOR' ? Number(sectorId) : null,
+        createdById: req.user.id,
+      },
     });
-    for (const userId of attendeeUserIds) {
-      await notifyEventInvitation(userId, event);
+    if (attendeeUserIds.length > 0) {
+      await tx.eventAttendee.createMany({
+        data: attendeeUserIds.map(userId => ({ eventId: evt.id, userId })),
+        skipDuplicates: true,
+      });
     }
+    return evt;
+  });
+
+  // Notifications are side-effects and stay outside the transaction
+  for (const userId of attendeeUserIds) {
+    await notifyEventInvitation(userId, event);
   }
 
   res.status(201).json({ id: event.id, title: event.title, startAt: event.startAt, attendeeCount: attendeeUserIds.length });
