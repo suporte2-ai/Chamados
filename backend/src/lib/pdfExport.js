@@ -101,8 +101,8 @@ function barChart(doc, title, entries, total, x, y, w) {
     const by = y + Math.round((rowH - barH) / 2);
     filled(doc, bx, by, barW, barH, C.bg);
     doc.save().rect(bx, by, barW, barH).strokeColor(C.border).lineWidth(0.3).stroke().restore();
-    if (pct > 0) {
-      const fw = Math.max(Math.round((pct / 100) * barW), 2);
+    if (e.value > 0) {
+      const fw = Math.max(Math.round((e.value / total) * barW), 2);
       doc.save().rect(bx, by, fw, barH).fillColor(e.color).fill().restore();
     }
 
@@ -315,7 +315,7 @@ async function generatePdf(summary) {
     // KPI cards
     y = kpiCards(doc, overall, y);
 
-    // Gráficos de rosca: Status e Urgência lado a lado
+    // Gráficos de barras: Status e Urgência lado a lado
     const statusEntries = Object.entries(overall.byStatus || {})
       .map(([k, v]) => ({ label: STATUS_LABELS[k] || k, value: v, color: STATUS_COLORS[k] || '#999' }))
       .filter(e => e.value > 0);
