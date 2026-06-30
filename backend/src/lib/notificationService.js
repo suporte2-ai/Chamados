@@ -93,6 +93,45 @@ async function notifyIdeaVote(authorId, voterId, idea) {
   }
 }
 
+async function notifyEventInvitation(userId, event) {
+  try {
+    await notify({
+      userId,
+      type: 'EVENT_INVITATION',
+      message: `Você foi convocado para: ${event.title} em ${new Date(event.startAt).toLocaleDateString('pt-BR')}`,
+      link: '/agenda',
+    });
+  } catch (err) {
+    console.error('notifyEventInvitation error:', err);
+  }
+}
+
+async function notifyEventReminder(userId, event, daysAhead) {
+  try {
+    await notify({
+      userId,
+      type: 'EVENT_REMINDER',
+      message: `Lembrete: ${event.title} acontece em ${daysAhead} dia${daysAhead > 1 ? 's' : ''}`,
+      link: '/agenda',
+    });
+  } catch (err) {
+    console.error('notifyEventReminder error:', err);
+  }
+}
+
+async function notifyEventCancelled(userId, event) {
+  try {
+    await notify({
+      userId,
+      type: 'EVENT_CANCELLED',
+      message: `O evento "${event.title}" foi cancelado`,
+      link: '/agenda',
+    });
+  } catch (err) {
+    console.error('notifyEventCancelled error:', err);
+  }
+}
+
 module.exports = {
   notifyTicketAssigned,
   notifyTicketStatusChanged,
@@ -100,4 +139,7 @@ module.exports = {
   notifyTicketReopened,
   notifyIdeaStatusChanged,
   notifyIdeaVote,
+  notifyEventInvitation,
+  notifyEventReminder,
+  notifyEventCancelled,
 };
