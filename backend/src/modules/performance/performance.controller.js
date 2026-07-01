@@ -134,6 +134,14 @@ async function buildSummary(fromDate, toDate, from, to, filters) {
     };
   });
 
+  const statusGroups = await prisma.ticket.groupBy({ by: ['status'], where, _count: { id: true } });
+  const byStatus = Object.fromEntries(STATUS_KEYS.map(s => [s, 0]));
+  for (const g of statusGroups) byStatus[g.status] = g._count.id;
+
+  const urgencyGroups = await prisma.ticket.groupBy({ by: ['urgency'], where, _count: { id: true } });
+  const byUrgency = Object.fromEntries(URGENCY_KEYS.map(u => [u, 0]));
+  for (const g of urgencyGroups) byUrgency[g.urgency] = g._count.id;
+
   return {
     period: { from, to },
     overall: {
@@ -141,6 +149,8 @@ async function buildSummary(fromDate, toDate, from, to, filters) {
       avgFirstResponseMinutes: roundOrNull(agg._avg.timeToFirstResponseMinutes),
       avgResolutionMinutes: roundOrNull(agg._avg.timeToResolutionMinutes),
       slaComplianceRate: overallSlaRate,
+      byStatus,
+      byUrgency,
     },
     byUser,
   };
@@ -295,4 +305,42 @@ async function volume(req, res) {
   })));
 }
 
-module.exports = { summary, drilldown, exportData, volume };
+async function byCategory(req, res) {
+  const dates = parseDates(req, res);
+  if (!dates) return;
+  const { fromDate, toDate } = dates;
+
+  const rows = await prisma.ticket.groupBy({
+    by: ['categoryId', 'urgency'],
+    where: { createdAt: { gte: fromDate, lte: toDate } },
+    _count: { id: true },
+    orderBy: { _count: { id: 'desc' } },
+  });
+
+  const categoryIds = [...new Set(rows.map(r => r.categoryId))];
+  const categories = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+    select: { id: true, name: true },
+  });
+  const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
+
+  const grouped = {};
+  for (const row of rows) {
+    const cid = row.categoryId;
+    if (!grouped[cid]) {
+      grouped[cid] = {
+        categoryId: cid,
+        categoryName: catMap[cid] ?? 'Desconhecida',
+        total: 0,
+        byUrgency: { CRITICO: 0, ALTO: 0, MEDIO: 0, BAIXO: 0 },
+      };
+    }
+    grouped[cid].total += row._count.id;
+    grouped[cid].byUrgency[row.urgency] = (grouped[cid].byUrgency[row.urgency] ?? 0) + row._count.id;
+  }
+
+  const result = Object.values(grouped).sort((a, b) => b.total - a.total).slice(0, 10);
+  res.json(result);
+}
+
+module.exports = { summary, drilldown, exportData, volume, byCategory };
