@@ -146,6 +146,7 @@ async function buildSummary(fromDate, toDate, from, to, filters) {
     period: { from, to },
     overall: {
       totalTickets: agg._count.id,
+      totalResolved: slaRow.total_resolved,
       avgFirstResponseMinutes: roundOrNull(agg._avg.timeToFirstResponseMinutes),
       avgResolutionMinutes: roundOrNull(agg._avg.timeToResolutionMinutes),
       slaComplianceRate: overallSlaRate,

@@ -44,6 +44,12 @@ export default function TrendChart() {
 
   if (isLoading) return <Skeleton className="h-48 w-full rounded-xl" />
 
+  if (data.length === 0) return (
+    <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-center h-48">
+      <p className="text-sm text-muted-foreground">Sem dados no período</p>
+    </div>
+  )
+
   const chartData = data.map(d => ({
     date: formatDate(d.date),
     'Abertos': d.created,

@@ -101,12 +101,12 @@ export default function PerformancePage() {
 
   const { data: summary, isLoading } = useQuery({
     queryKey: ['performance-summary', params],
-    queryFn: () => performanceApi.summary(params.from, params.to),
+    queryFn: () => performanceApi.summary(params.from, params.to, params.sectorId),
   })
 
   const { data: volumeData = [] } = useQuery({
     queryKey: ['performance-volume', params],
-    queryFn: () => performanceApi.volume(params.from, params.to),
+    queryFn: () => performanceApi.volume(params.from, params.to, params.sectorId),
   })
 
   const { data: drillData, isLoading: loadingDrill } = useQuery({
@@ -198,7 +198,7 @@ export default function PerformancePage() {
           tooltipStyle={tooltipStyle} />
         <MetricCard loading={isLoading} title="SLA dentro do prazo"
           value={slaPct != null ? `${slaPct}%` : '—'}
-          subtitle={slaPct != null ? `${Math.round((slaRate * (summary?.overall?.totalTickets ?? 0)))} resolvidos no prazo` : undefined}
+          subtitle={slaPct != null ? `${Math.round((slaRate * (summary?.overall?.totalResolved ?? 0)))} resolvidos no prazo` : undefined}
           accentColor="#22c55e"
           chartData={slaDonut}
           tooltipStyle={tooltipStyle} />
