@@ -1,9 +1,9 @@
 import api from '@/lib/axios'
 
 export const performanceApi = {
-  summary: (params) => api.get('/api/performance/summary', { params }).then(r => r.data),
+  summary: (from, to) => api.get('/api/performance/summary', { params: { from, to } }).then(r => r.data),
   drilldown: (id, params) => api.get(`/api/performance/users/${id}/drilldown`, { params }).then(r => r.data),
-  volume: (params) => api.get('/api/performance/volume', { params }).then(r => r.data),
+  volume: (from, to) => api.get('/api/performance/volume', { params: { from, to } }).then(r => r.data),
   byCategory: (from, to) => api.get('/api/performance/by-category', { params: { from, to } }).then(r => r.data),
   download: async (format, params) => {
     const response = await api.get('/api/performance/export', {
