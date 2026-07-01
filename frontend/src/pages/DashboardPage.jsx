@@ -1,10 +1,74 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, Clock, Calendar, MapPin, ChevronRight } from 'lucide-react'
 import { ticketsApi } from '@/api/tickets'
+import { eventsApi } from '@/api/events'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
-import { formatDate, formatTicketId, STATUS_LABELS, STATUS_COLORS, URGENCY_LABELS, URGENCY_COLORS, SLA_BADGE_LABELS, SLA_BADGE_COLORS, cn } from '@/lib/utils'
+import {
+  formatDate, formatTicketId, timeAgo,
+  STATUS_LABELS, STATUS_COLORS,
+  URGENCY_LABELS, URGENCY_COLORS,
+  SLA_BADGE_LABELS, SLA_BADGE_COLORS,
+  cn,
+} from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import TrendChart from '@/components/dashboard/TrendChart'
+import SlaGoalWidget from '@/components/dashboard/SlaGoalWidget'
+import CategoryHeatmap from '@/components/dashboard/CategoryHeatmap'
+
+const RSVP_DOT = {
+  CONFIRMADO: 'bg-emerald-500',
+  RECUSADO:   'bg-slate-400',
+  PENDENTE:   'bg-amber-400',
+}
+
+function AgendaWidget({ events, navigate }) {
+  if (events.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-xl px-5 py-8 text-center text-sm text-muted-foreground">
+        Nenhum evento próximo na agenda.
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
+      {events.map(e => {
+        const start = new Date(e.startAt)
+        const day   = start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        const time  = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        const rsvp  = e.myRsvp ?? 'PENDENTE'
+        return (
+          <div
+            key={e.id}
+            onClick={() => navigate('/agenda')}
+            className="px-5 py-3 hover:bg-muted/40 cursor-pointer flex items-center gap-4 transition-colors"
+          >
+            <div className="text-center shrink-0 w-12">
+              <p className="text-xs font-semibold text-foreground leading-tight">{day.split(' ')[0]}</p>
+              <p className="text-[10px] text-muted-foreground uppercase">{day.split(' ').slice(1).join(' ')}</p>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-sm truncate text-foreground">{e.title}</p>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3 shrink-0" />
+                <span>{time}</span>
+                {e.location && (
+                  <>
+                    <MapPin className="h-3 w-3 shrink-0 ml-1" />
+                    <span className="truncate">{e.location}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <span className={cn('w-2 h-2 rounded-full shrink-0', RSVP_DOT[rsvp])} title={rsvp} />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO', 'RESOLVIDO', 'FECHADO']
 
@@ -14,6 +78,72 @@ const STATUS_BORDER = {
   AGUARDANDO:   'border-l-orange-500',
   RESOLVIDO:    'border-l-green-500',
   FECHADO:      'border-l-slate-400',
+}
+
+const URGENCY_BORDER = {
+  CRITICO: 'border-l-red-500',
+  ALTO:    'border-l-orange-500',
+  MEDIO:   'border-l-yellow-400',
+  BAIXO:   'border-l-blue-400',
+}
+
+function TicketCard({ ticket, navigate, showSla }) {
+  return (
+    <div
+      onClick={() => navigate(`/tickets/${ticket.id}`)}
+      className={cn(
+        'group bg-card border border-border border-l-4 rounded-xl p-4 cursor-pointer',
+        'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-150 space-y-2.5',
+        URGENCY_BORDER[ticket.urgency]
+      )}
+    >
+      {/* Topo: ID + status */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-xs text-muted-foreground tracking-wide">
+          {formatTicketId(ticket.id)}
+        </span>
+        <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[ticket.status])}>
+          {STATUS_LABELS[ticket.status]}
+        </span>
+      </div>
+
+      {/* Título */}
+      <p className="font-semibold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        {ticket.title}
+      </p>
+
+      {/* Rodapé: urgência + SLA + tempo */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+        <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[ticket.urgency])}>
+          {URGENCY_LABELS[ticket.urgency]}
+        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {showSla && ticket.slaBadge && (
+            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[ticket.slaBadge])}>
+              SLA {SLA_BADGE_LABELS[ticket.slaBadge]}
+            </span>
+          )}
+          <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {timeAgo(ticket.createdAt)}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({ title, action, onAction }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="font-semibold text-sm text-foreground">{title}</h2>
+      {action && (
+        <button onClick={onAction} className="text-xs text-blue-600 hover:underline">
+          {action}
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default function DashboardPage() {
@@ -58,19 +188,35 @@ export default function DashboardPage() {
     enabled: !showMyTickets && !showSlaAlerts,
   })
 
+  const now = new Date()
+  const agendaFrom = now.toISOString().slice(0, 10)
+  const agendaTo   = new Date(now.getFullYear(), now.getMonth() + 1, 31).toISOString().slice(0, 10)
+
+  const { data: agendaEvents = [], isLoading: loadingAgenda } = useQuery({
+    queryKey: ['dashboard-agenda', agendaFrom],
+    queryFn: () => eventsApi.list({ from: agendaFrom, to: agendaTo }),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const upcomingEvents = agendaEvents
+    .filter(e => new Date(e.startAt) >= now)
+    .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
+    .slice(0, 5)
+
   const myTickets = (myTicketsData?.items || [])
     .filter(t => t.status !== 'FECHADO')
-    .slice(0, 10)
+    .slice(0, 12)
 
   const slaAlerts = (slaData?.items || [])
     .filter(t => t.slaBadge === 'vermelho' && t.status !== 'FECHADO')
-    .slice(0, 5)
+    .slice(0, 6)
 
   const requesterTickets = (requesterData?.items || [])
     .filter(t => t.status !== 'FECHADO')
+    .slice(0, 12)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
 
       {/* Cards de status */}
@@ -99,114 +245,140 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Painéis inferiores */}
-      {(showMyTickets || showSlaAlerts) ? (
-        <div className="grid md:grid-cols-2 gap-6">
-          {showMyTickets && (
-            <div className="bg-card border border-border rounded-xl">
-              <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-                <span>Meus chamados abertos</span>
-                <button
-                  onClick={() => navigate(`/tickets?assignedToId=${user?.id}`)}
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Ver todos
-                </button>
-              </div>
-              {loadingMy
-                ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
-                : myTickets.length === 0
-                  ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado aberto atribuído a você.</p>
-                  : (
-                    <table className="w-full text-sm">
-                      <tbody className="divide-y divide-border">
-                        {myTickets.map(t => (
-                          <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-muted/40 cursor-pointer transition-colors">
-                            <td className="px-4 py-2 font-mono text-muted-foreground text-xs">{formatTicketId(t.id)}</td>
-                            <td className="px-4 py-2 max-w-[160px] truncate font-medium text-foreground">{t.title}</td>
-                            <td className="px-4 py-2">
-                              <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
-                                {STATUS_LABELS[t.status]}
-                              </span>
-                            </td>
-                            {t.slaBadge && (
-                              <td className="px-4 py-2">
-                                <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
-                                  {SLA_BADGE_LABELS[t.slaBadge]}
-                                </span>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )
-              }
-            </div>
-          )}
-
-          {showSlaAlerts && (
-            <div className="bg-card border border-border rounded-xl">
-              <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-                <span>Alertas de SLA crítico</span>
-                <button onClick={() => navigate('/tickets')} className="text-xs text-blue-600 hover:underline">
-                  Ver todos
-                </button>
-              </div>
-              {loadingSla
-                ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
-                : slaAlerts.length === 0
-                  ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado com SLA crítico.</p>
-                  : (
-                    <div className="divide-y divide-border">
-                      {slaAlerts.map(t => (
-                        <div key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="px-5 py-3 hover:bg-muted/40 cursor-pointer flex items-center justify-between gap-2 transition-colors">
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate text-foreground">{t.title}</p>
-                            <p className="text-xs text-muted-foreground">{formatTicketId(t.id)} · {formatDate(t.slaResolutionDeadline)}</p>
-                          </div>
-                          <span className={cn('shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
-                            {URGENCY_LABELS[t.urgency]}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-              }
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="bg-card border border-border rounded-xl">
-          <div className="px-5 py-3 border-b bg-muted/40 font-medium text-sm">Meus chamados abertos</div>
-          {loadingRequester
-            ? <div className="p-4"><Skeleton className="h-40 w-full" /></div>
-            : requesterTickets.length === 0
-              ? <p className="px-5 py-4 text-sm text-muted-foreground">Nenhum chamado aberto.</p>
-              : (
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-border">
-                    {requesterTickets.map(t => (
-                      <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="hover:bg-muted/40 cursor-pointer transition-colors">
-                        <td className="px-4 py-2 font-mono text-muted-foreground text-xs">{formatTicketId(t.id)}</td>
-                        <td className="px-4 py-2 font-medium text-foreground">{t.title}</td>
-                        <td className="px-4 py-2">
-                          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[t.status])}>
-                            {STATUS_LABELS[t.status]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2">
-                          <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
-                            {URGENCY_LABELS[t.urgency]}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )
+      {/* Widget de agenda */}
+      <section>
+        <SectionHeader
+          title={
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-primary" />
+              Próximos eventos da agenda
+            </span>
           }
+          action="Ver agenda"
+          onAction={() => navigate('/agenda')}
+        />
+        {loadingAgenda ? (
+          <div className="space-y-2">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
+          </div>
+        ) : (
+          <AgendaWidget events={upcomingEvents} navigate={navigate} />
+        )}
+      </section>
+
+      {/* Analytics */}
+      <section>
+        <SectionHeader title="Análise de chamados" action="Ver relatório completo" onAction={() => navigate('/performance')} />
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
+          <TrendChart />
+          <SlaGoalWidget />
         </div>
+      </section>
+
+      <section>
+        <CategoryHeatmap />
+      </section>
+
+      {/* Meus chamados — cards */}
+      {showMyTickets && (
+        <section>
+          <SectionHeader
+            title="Meus chamados abertos"
+            action="Ver todos"
+            onAction={() => navigate(`/tickets?assignedToId=${user?.id}`)}
+          />
+          {loadingMy ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+            </div>
+          ) : myTickets.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl px-5 py-10 text-center text-sm text-muted-foreground">
+              Nenhum chamado aberto atribuído a você.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {myTickets.map(t => (
+                <TicketCard key={t.id} ticket={t} navigate={navigate} showSla={showSlaAlerts} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Alertas de SLA crítico — lista compacta */}
+      {showSlaAlerts && (
+        <section>
+          <SectionHeader
+            title={
+              <span className="flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                Alertas de SLA crítico
+              </span>
+            }
+            action="Ver todos"
+            onAction={() => navigate('/tickets')}
+          />
+          {loadingSla ? (
+            <div className="space-y-2">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
+            </div>
+          ) : slaAlerts.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl px-5 py-6 text-center text-sm text-muted-foreground">
+              Nenhum chamado com SLA crítico.
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
+              {slaAlerts.map(t => (
+                <div
+                  key={t.id}
+                  onClick={() => navigate(`/tickets/${t.id}`)}
+                  className="px-5 py-3 hover:bg-muted/40 cursor-pointer flex items-center gap-4 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate text-foreground">{t.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatTicketId(t.id)} · prazo {formatDate(t.slaResolutionDeadline)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', URGENCY_COLORS[t.urgency])}>
+                      {URGENCY_LABELS[t.urgency]}
+                    </span>
+                    <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium border', SLA_BADGE_COLORS[t.slaBadge])}>
+                      {SLA_BADGE_LABELS[t.slaBadge]}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Visão solicitante — cards */}
+      {!showMyTickets && !showSlaAlerts && (
+        <section>
+          <SectionHeader
+            title="Meus chamados abertos"
+            action="Ver todos"
+            onAction={() => navigate('/tickets')}
+          />
+          {loadingRequester ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+            </div>
+          ) : requesterTickets.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl px-5 py-10 text-center text-sm text-muted-foreground">
+              Nenhum chamado aberto.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {requesterTickets.map(t => (
+                <TicketCard key={t.id} ticket={t} navigate={navigate} showSla={false} />
+              ))}
+            </div>
+          )}
+        </section>
       )}
     </div>
   )
